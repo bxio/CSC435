@@ -22,8 +22,8 @@
 // All other named tokens (i.e. the single character tokens are omitted)
 // The order in which they are listed here does not matter.
 %token      Kwd_break Kwd_class Kwd_const Kwd_else Kwd_if Kwd_int
-%token      Kwd_new Kwd_out Kwd_public Kwd_return Kwd_static Kwd_string
-%token      Kwd_using Kwd_void Kwd_while
+%token      Kwd_new Kwd_null Kwd_out Kwd_override Kwd_public Kwd_return
+%token		Kwd_static Kwd_string Kwd_using Kwd_virtual Kwd_void Kwd_while
 %token      PLUSPLUS MINUSMINUS Ident Number StringConst
 
 %%
@@ -46,6 +46,8 @@ ClassList:	    ClassList ClassDecl
 		;
 
 ClassDecl:		Kwd_class Ident '{'  DeclList  '}'
+		|		Kwd_public Kwd_class Ident '{'  DeclList  '}' // object declaration
+		|		Kwd_public Kwd_class Ident '{'  DeclList  '}' ':' Ident // inheritance
 		;
 
 DeclList:       DeclList ConstDecl
@@ -71,7 +73,11 @@ IdentList:      IdentList ',' Ident
         |       Ident
         ;
 
-MethodDecl:     Kwd_public Kwd_static Kwd_void Ident '(' OptFormals ')' Block
+MethodDecl:     Kwd_public Kwd_static Type Ident '(' OptFormals ')' Block
+		|		Kwd_public Kwd_virtual Type Ident '(' OptFormals ')' Block
+		|		Kwd_public Kwd_override Type Ident '(' OptFormals ')' Block
+		|		Kwd_public Ident '(' OptFormals ')' Block // constructor
+		|		Kwd_public Type Ident '(' OptFormals ')' Block
         ;
 
 OptFormals:     /* empty */
@@ -92,6 +98,7 @@ Type:           TypeName
 TypeName:       Ident
         |       Kwd_int
         |       Kwd_string
+        |       Kwd_void
         ;
 
 Statement:      Designator '=' Expr ';'
@@ -165,6 +172,7 @@ Qualifiers:     '.' Ident Qualifiers
 
 %%
 
-
+// The parser needs a constructor
+Parser() : base(null) { }
 
 
