@@ -22,7 +22,7 @@
 // All other named tokens (i.e. the single character tokens are omitted)
 // The order in which they are listed here does not matter.
 %token      Kwd_break Kwd_char Kwd_class Kwd_const Kwd_else Kwd_if Kwd_int
-%token      Kwd_new Kwd_null Kwd_out Kwd_override Kwd_public Kwd_return
+%token      Kwd_new Kwd_null Kwd_out Kwd_override Kwd_public Kwd_return 
 %token		Kwd_static Kwd_string Kwd_using Kwd_virtual Kwd_void Kwd_while
 %token      PLUSPLUS MINUSMINUS Ident Number StringConst
 
@@ -46,12 +46,12 @@ ClassList:	    ClassList ClassDecl
 		;
 
 ClassDecl:		Kwd_class Ident '{'  DeclList  '}'
-		|		Kwd_public Kwd_class Ident '{'  DeclList  '}' // object declaration
-		|		Kwd_public Kwd_class Ident '{'  DeclList  '}' ':' Ident // inheritance
+		|		Kwd_class Ident '{'  DeclList  '}' ':' Ident // inheritance
 		;
 
 DeclList:       DeclList ConstDecl
         |       DeclList MethodDecl
+        //|       DeclList FieldDeclList
         |       /* empty */
         ;
 
@@ -62,12 +62,12 @@ InitVal:        Number
         |       StringConst
         ;
 
-FieldDeclList:  FieldDeclList FieldDecl
-        |       /* empty */
-        ;
+//FieldDeclList:  FieldDeclList FieldDecl
+//        |       /* empty */
+//        ;
 
-FieldDecl:      Kwd_public Type IdentList ';'
-        ;
+//FieldDecl:      Kwd_public Type IdentList ';'
+ //       ;
 
 IdentList:      IdentList ',' Ident
         |       Ident
@@ -98,6 +98,7 @@ Type:           TypeName
 TypeName:       Ident
         |       Kwd_int
         |       Kwd_string
+		|		Kwd_char
         |       Kwd_void
         ;
 
@@ -105,8 +106,8 @@ Statement:      Designator '=' Expr ';'
         |       Designator '(' OptActuals ')' ';'
         |       Designator PLUSPLUS ';'
         |       Designator MINUSMINUS ';'
-        |       Kwd_if '(' Expr ')' Statement OptElsePart
-        |       Kwd_while '(' Expr ')' Statement
+        |       Kwd_if '(' Expr ')' '{' Statement '}' OptElsePart
+        |       Kwd_while '(' Expr ')' '{' Statement '}'
         |       Kwd_break ';'
         |       Kwd_return ';'
         |       Kwd_return Expr ';'
@@ -122,7 +123,7 @@ ActPars:        ActPars ',' Expr
         |       Expr
         ;
 
-OptElsePart:    Kwd_else Statement
+OptElsePart:    Kwd_else '{' Statement '}'
         |       /* empty */
         ;
 
@@ -134,7 +135,7 @@ LocalDecl:      Ident IdentList ';'
         ;
 
 DeclsAndStmts:   /* empty */
-        |       DeclsAndStmts Statement
+        |       DeclsAndStmts '{' Statement '}'
         |       DeclsAndStmts LocalDecl
         ;
 
