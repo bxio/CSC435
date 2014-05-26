@@ -21,7 +21,7 @@
 
 // All other named tokens (i.e. the single character tokens are omitted)
 // The order in which they are listed here does not matter.
-%token      Kwd_break Kwd_class Kwd_const Kwd_else Kwd_if Kwd_int
+%token      Kwd_break Kwd_char Kwd_class Kwd_const Kwd_else Kwd_if Kwd_int
 %token      Kwd_new Kwd_null Kwd_out Kwd_override Kwd_public Kwd_return
 %token		Kwd_static Kwd_string Kwd_using Kwd_virtual Kwd_void Kwd_while
 %token      PLUSPLUS MINUSMINUS Ident Number StringConst

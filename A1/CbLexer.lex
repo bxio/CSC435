@@ -30,6 +30,7 @@ opchar [+\-*/%=] // must escape "-" as it signifies a range
 {space}          {}
 
 Kwd_break       {last_token_text=yytext;return (int)Tokens.Kwd_break;}
+Kwd_char        {last_token_text=yytext;return (int)Tokens.Kwd_char;}
 Kwd_class       {last_token_text=yytext;return (int)Tokens.Kwd_class;}
 Kwd_const       {last_token_text=yytext;return (int)Tokens.Kwd_const;}
 Kwd_else        {last_token_text=yytext;return (int)Tokens.Kwd_else;}
@@ -57,7 +58,7 @@ Kwd_while       {last_token_text=yytext;return (int)Tokens.Kwd_while;}
 /\*.*\*/        {}
 
 .               { yyerror("illegal character ({0})", yytext); }
-
+.+              {last_token_text=yytext;return (int)Tokens.StringConst;}
 %%
 
 public string last_token_text = "";
