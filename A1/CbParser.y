@@ -22,7 +22,7 @@
 // All other named tokens (i.e. the single character tokens are omitted)
 // The order in which they are listed here does not matter.
 %token      Kwd_break Kwd_char Kwd_class Kwd_const Kwd_else Kwd_if Kwd_int
-%token      Kwd_new Kwd_null Kwd_out Kwd_override Kwd_public Kwd_return 
+%token      Kwd_new Kwd_null Kwd_out Kwd_override Kwd_public Kwd_return
 %token		Kwd_static Kwd_string Kwd_using Kwd_virtual Kwd_void Kwd_while
 %token      PLUSPLUS MINUSMINUS Ident Number StringConst
 
@@ -73,13 +73,16 @@ IdentList:      IdentList ',' Ident
         |       Ident
         ;
 
-MethodDecl:     Kwd_public Kwd_static Type Ident '(' OptFormals ')' Block
-		|		Kwd_public Kwd_virtual Type Ident '(' OptFormals ')' Block
-		|		Kwd_public Kwd_override Type Ident '(' OptFormals ')' Block
-		|		Kwd_public Ident '(' OptFormals ')' Block // constructor
-		|		Kwd_public Type Ident '(' OptFormals ')' Block
+MethodDecl:     MethodPublic Kwd_static Type Ident '(' OptFormals ')' Block
+		|		MethodPublic Kwd_virtual Type Ident '(' OptFormals ')' Block
+		|		MethodPublic Kwd_override Type Ident '(' OptFormals ')' Block
+		|		MethodPublic Ident '(' OptFormals ')' Block // constructor
+		|		MethodPublic Type Ident '(' OptFormals ')' Block
         ;
 
+MethodPublic:	Kwd_public
+		|		/* empty */
+		;
 OptFormals:     /* empty */
         |       FormalPars
         ;
@@ -172,8 +175,24 @@ Qualifiers:     '.' Ident Qualifiers
         ;
 
 %%
+  //string filename;
+  FrontEnd.Scanner lexer;
 
-// The parser needs a constructor
-Parser() : base(null) { }
+  // define our own constructor for the Parser class
+  public Parser( string filename, FrontEnd.Scanner lexer ): base(lexer) {
+    //this.filename = filename;
+    this.Scanner = this.lexer = lexer;
+  }
+
+  // Use this function for reporting non-fatal errors discovered
+  // while parsing. An example usage is:
+  //    yyerror( "Identifier {0} has not been declared", idname );
+  public void yyerror( string format, params Object[] args ) {
+    Console.Write("{0}: ", LineNumber);
+    Console.WriteLine(format, args);
+  }
+
+  // returns the lexer's current line number
+  public int LineNumber { get{return lexer.LineNumber;} }
 
 
