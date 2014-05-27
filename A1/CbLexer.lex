@@ -25,7 +25,7 @@
 quotes [\'\"]
 space [ \n\r\t]
 opchar [+\-*/%=] // must escape "-" as it signifies a range
-
+parentheses [\(\)\{\}]
 %%
 {space}     {}
 
