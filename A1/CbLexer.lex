@@ -15,16 +15,22 @@
   }
 
   public int LineNumber { get{return yyline;} }    
+  
+  public void printComment(){
+	if(cbc.debug_flag){
+		Console.WriteLine("found comment.");
+	}
+  }
 %}
 
 quotes [\'\"]
 space [ \n\r\t]
-opchar [+\-*/%=] // must escape "-" as it signifies a range
-semicolon [;]
-parentheses [\(\)\{\}\[\]]
+opchar [+\-*/%=\(\)\{\}\[\]\;\^] // must escape "-" as it signifies a range
+
 %%
 {space}     {}
-{semicolon}	{return (int)(yytext[0]);}
+([/][/]){1}[^\n]*        {} //Single line comments.
+
 
 break       {last_token_text=yytext;return (int)Tokens.Kwd_break;}
 char        {last_token_text=yytext;return (int)Tokens.Kwd_char;}
@@ -51,12 +57,6 @@ while       {last_token_text=yytext;return (int)Tokens.Kwd_while;}
 0|[1-9][0-9]*|0x[0-9a-fA-F][0-9a-fA-F]*    {last_token_text=yytext;return (int)Tokens.Number;}
 [a-zA-Z][a-zA-Z0-9_]*   {last_token_text=yytext;return (int)Tokens.Ident;}
 {opchar}        {return (int)(yytext[0]);}
-[()]			{return (int)(yytext[0]);}
-[{]				{return (int)(yytext[0]);}
-[}]				{return (int)(yytext[0]);}
-[\[]			{return (int)(yytext[0]);}
-[\]]			{return (int)(yytext[0]);}
-/\*.*\*/        {}
 
 .              { yyerror("illegal character ({0})", yytext); }
 %%
