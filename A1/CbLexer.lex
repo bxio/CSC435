@@ -2,32 +2,29 @@
 %tokentype Tokens
 
 %{
-  public int lineNum = 1;
-
-  public int LineNumber { get{ return lineNum; } }
-
   public override void yyerror( string msg, params object[] args ) {
-    Console.WriteLine("{0}: ", lineNum);
-    if (args == null || args.Length == 0) {
+    Console.WriteLine("{0}: ", yyline);
+    if (args == null || args.Length == 0)
       Console.WriteLine("{0}", msg);
-    }
-    else {
+    else
       Console.WriteLine(msg, args);
-    }
   }
 
   public void yyerror( int lineNum, string msg, params object[] args ) {
     Console.WriteLine("{0}: {1}", msg, args);
   }
 
+  public int LineNumber { get{return yyline;} }    
 %}
 
 quotes [\'\"]
 space [ \n\r\t]
 opchar [+\-*/%=] // must escape "-" as it signifies a range
-parentheses [\(\)\{\}]
+semicolon [;]
+parentheses [\(\)\{\}\[\]]
 %%
 {space}     {}
+{semicolon}	{return (int)(yytext[0]);}
 
 break       {last_token_text=yytext;return (int)Tokens.Kwd_break;}
 char        {last_token_text=yytext;return (int)Tokens.Kwd_char;}
@@ -55,10 +52,13 @@ while       {last_token_text=yytext;return (int)Tokens.Kwd_while;}
 [a-zA-Z][a-zA-Z0-9_]*   {last_token_text=yytext;return (int)Tokens.Ident;}
 {opchar}        {return (int)(yytext[0]);}
 [()]			{return (int)(yytext[0]);}
+[{]				{return (int)(yytext[0]);}
+[}]				{return (int)(yytext[0]);}
+[\[]			{return (int)(yytext[0]);}
+[\]]			{return (int)(yytext[0]);}
 /\*.*\*/        {}
 
-.               { yyerror("illegal character ({0})", yytext); }
-.+              {last_token_text=yytext;return (int)Tokens.StringConst;}
+.              { yyerror("illegal character ({0})", yytext); }
 %%
 
 public string last_token_text = "";
