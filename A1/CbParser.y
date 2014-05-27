@@ -7,6 +7,7 @@
 
 %namespace  FrontEnd
 %tokentype  Tokens
+%using System.IO;
 
 // All tokens which can be used as operators in expressions
 // they are ordered by precedence level (lowest first)
@@ -22,7 +23,7 @@
 // All other named tokens (i.e. the single character tokens are omitted)
 // The order in which they are listed here does not matter.
 %token      Kwd_break Kwd_char Kwd_class Kwd_const Kwd_else Kwd_if Kwd_int
-%token      Kwd_new Kwd_null Kwd_out Kwd_override Kwd_public Kwd_return 
+%token      Kwd_new Kwd_null Kwd_out Kwd_override Kwd_public Kwd_return
 %token		Kwd_static Kwd_string Kwd_using Kwd_virtual Kwd_void Kwd_while
 %token      PLUSPLUS MINUSMINUS Ident Number StringConst
 
@@ -104,7 +105,7 @@ TypeName:       Ident
 		|		Kwd_char
         |       Kwd_void
         ;
-		
+
 Statement:      Designator '=' Expr ';'
         |       Designator '(' OptActuals ')' ';'
         |       Designator PLUSPLUS ';'
@@ -134,10 +135,10 @@ Block:          '{' DeclsAndStmts '}'
         ;
 
 LocalDecl:      Ident IdentList ';'
+				| 			Type Ident '=' Expr ';'
         |       Ident '[' ']' IdentList ';'
-		//|		Type Ident '=' Expr ';'
-        ;
-		
+				;
+
 DeclsAndStmts:   /* empty */
         |       DeclsAndStmts '{' Statement '}'
         |       DeclsAndStmts LocalDecl
@@ -194,6 +195,6 @@ Qualifiers:     '.' Ident Qualifiers
   }
 
   // returns the lexer's current line number
-  public int LineNumber { get{return lexer.LineNumber;} }  
+  public int LineNumber { get{return lexer.LineNumber;} }
 
 
