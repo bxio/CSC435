@@ -16,11 +16,21 @@
 
   public int LineNumber { get{return yyline;} }    
   
-  public void printComment(){
+  public void foundComment(){
 	if(cbc.debug_flag){
-		Console.WriteLine("found comment.");
+		Console.WriteLine("Consumed comment line {0}", yyline);
 	}
   }
+	public void startMultiLineComment(){
+		if(cbc.debug_flag){
+			Console.WriteLine("Multiline comment start {0}", yyline);
+		}
+	} 
+	public void finishMultiLineComment(){
+		if(cbc.debug_flag){
+			Console.WriteLine("Multiline comment start {0}", yyline);
+		}
+	} 
 %}
 
 quotes [\'\"]
@@ -29,8 +39,9 @@ opchar [+\-*/%=\(\)\{\}\[\]\;\^] // must escape "-" as it signifies a range
 
 %%
 {space}     {}
-([/][/]){1}[^\n]*        {} //Single line comments.
-
+([/][/]){1}[^\n]*        {foundComment();} //Single line comments.
+([/][*]){1}[^(\*/)]*		{startMultiLineComment();}//multiline comments
+([\*][/])				{finishMultiLineComment();}//multiline comments
 
 break       {last_token_text=yytext;return (int)Tokens.Kwd_break;}
 char        {last_token_text=yytext;return (int)Tokens.Kwd_char;}
