@@ -1,5 +1,5 @@
 /* CbParser.y */
-%using System.IO;
+
 // The grammar shown in this file is INCOMPLETE!!
 // It does not support class inheritance, it does not permit
 // classes to contain methods (other than Main).
@@ -24,7 +24,7 @@
 // The order in which they are listed here does not matter.
 %token      Kwd_break Kwd_char Kwd_class Kwd_const Kwd_else Kwd_if Kwd_int
 %token      Kwd_new Kwd_null Kwd_out Kwd_override Kwd_public Kwd_return
-%token		Kwd_static Kwd_string Kwd_using Kwd_virtual Kwd_void Kwd_while
+%token      Kwd_static Kwd_string Kwd_using Kwd_virtual Kwd_void Kwd_while
 %token      PLUSPLUS MINUSMINUS Ident Number StringConst
 
 %%
@@ -52,7 +52,6 @@ ClassDecl:		Kwd_class Ident '{'  DeclList  '}'
 
 DeclList:       DeclList ConstDecl
         |       DeclList MethodDecl
-        //|       DeclList FieldDeclList
         |       /* empty */
         ;
 
@@ -63,27 +62,20 @@ InitVal:        Number
         |       StringConst
         ;
 
-//FieldDeclList:  FieldDeclList FieldDecl
-//        |       /* empty */
-//        ;
+FieldDeclList:  FieldDeclList FieldDecl
+        |       /* empty */
+        ;
 
-//FieldDecl:      Kwd_public Type IdentList ';'
- //       ;
+FieldDecl:      Kwd_public Type IdentList ';'
+        ;
 
 IdentList:      IdentList ',' Ident
         |       Ident
         ;
 
-MethodDecl:     MethodPublic Kwd_static Type Ident '(' OptFormals ')' Block
-		|		MethodPublic Kwd_virtual Type Ident '(' OptFormals ')' Block
-		|		MethodPublic Kwd_override Type Ident '(' OptFormals ')' Block
-		|		MethodPublic Ident '(' OptFormals ')' Block // constructor
-		|		MethodPublic Type Ident '(' OptFormals ')' Block
+MethodDecl:     Kwd_public Kwd_static Kwd_void Ident '(' OptFormals ')' Block
         ;
 
-MethodPublic:	Kwd_public
-		|		/* empty */
-		;
 OptFormals:     /* empty */
         |       FormalPars
         ;
@@ -102,16 +94,14 @@ Type:           TypeName
 TypeName:       Ident
         |       Kwd_int
         |       Kwd_string
-		|		Kwd_char
-        |       Kwd_void
         ;
 
 Statement:      Designator '=' Expr ';'
         |       Designator '(' OptActuals ')' ';'
         |       Designator PLUSPLUS ';'
         |       Designator MINUSMINUS ';'
-        |       Kwd_if '(' Expr ')' '{' Statement '}' OptElsePart
-        |       Kwd_while '(' Expr ')' '{' Statement '}'
+        |       Kwd_if '(' Expr ')' Statement OptElsePart
+        |       Kwd_while '(' Expr ')' Statement
         |       Kwd_break ';'
         |       Kwd_return ';'
         |       Kwd_return Expr ';'
@@ -127,7 +117,7 @@ ActPars:        ActPars ',' Expr
         |       Expr
         ;
 
-OptElsePart:    Kwd_else '{' Statement '}'
+OptElsePart:    Kwd_else Statement
         |       /* empty */
         ;
 
@@ -135,12 +125,11 @@ Block:          '{' DeclsAndStmts '}'
         ;
 
 LocalDecl:      Ident IdentList ';'
-				| 			Type Ident '=' Expr ';'
         |       Ident '[' ']' IdentList ';'
-				;
+        ;
 
 DeclsAndStmts:   /* empty */
-        |       DeclsAndStmts '{' Statement '}'
+        |       DeclsAndStmts Statement
         |       DeclsAndStmts LocalDecl
         ;
 
@@ -177,24 +166,26 @@ Qualifiers:     '.' Ident Qualifiers
         ;
 
 %%
-  //string filename;
-  FrontEnd.Scanner lexer;
+//string filename;
+FrontEnd.Scanner lexer;
 
-  // define our own constructor for the Parser class
-  public Parser( string filename, FrontEnd.Scanner lexer ): base(lexer) {
-    //this.filename = filename;
-    this.Scanner = this.lexer = lexer;
-  }
+// define our own constructor for the Parser class
+public Parser( string filename, FrontEnd.Scanner lexer ): base(lexer) {
+  //this.filename = filename;
+  this.Scanner = this.lexer = lexer;
+}
 
-  // Use this function for reporting non-fatal errors discovered
-  // while parsing. An example usage is:
-  //    yyerror( "Identifier {0} has not been declared", idname );
-  public void yyerror( string format, params Object[] args ) {
-    Console.Write("{0}: ", LineNumber);
-    Console.WriteLine(format, args);
-  }
+// Use this function for reporting non-fatal errors discovered
+// while parsing. An example usage is:
+//    yyerror( "Identifier {0} has not been declared", idname );
+public void yyerror( string format, params Object[] args ) {
+  Console.Write("{0}: ", LineNumber);
+  Console.WriteLine(format, args);
+}
 
-  // returns the lexer's current line number
-  public int LineNumber { get{return lexer.LineNumber;} }
+// returns the lexer's current line number
+public int LineNumber { get{return lexer.LineNumber;} }
+
+
 
 
