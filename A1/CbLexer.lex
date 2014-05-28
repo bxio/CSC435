@@ -31,6 +31,16 @@
 			Console.WriteLine("Multiline comment start {0}", yyline);
 		}
 	} 
+	
+	public void printTokensToFile(){
+		using (StreamWriter w = new StreamWriter("tokens.txt", true)){
+			w.Write("Word ");
+			w.WriteLine("word 21");
+			w.WriteLine("Line");
+		}
+
+	}
+	
 %}
 
 quotes [\'\"]
@@ -49,7 +59,7 @@ class       {last_token_text=yytext;return (int)Tokens.Kwd_class;}
 const       {last_token_text=yytext;return (int)Tokens.Kwd_const;}
 else        {last_token_text=yytext;return (int)Tokens.Kwd_else;}
 if          {last_token_text=yytext;return (int)Tokens.Kwd_if;}
-int         {last_token_text=yytext;return (int)Tokens.Kwd_int;}
+int         {last_token_text=yytext;printTokensToFile();return (int)Tokens.Kwd_int;}
 new         {last_token_text=yytext;return (int)Tokens.Kwd_new;}
 null        {last_token_text=yytext;return (int)Tokens.Kwd_null;}
 out         {last_token_text=yytext;return (int)Tokens.Kwd_out;}
