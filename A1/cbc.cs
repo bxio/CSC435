@@ -5,8 +5,8 @@ using FrontEnd;
 
 class cbc
 {
-    static bool debug_flag = false;
-    static bool tokens_flag = false;
+    public static bool debug_flag = false;
+    public static bool tokens_flag = false;
 
 	// Reads in parameters, adjusts flags
 	static int ReadFlags(string [] args){
@@ -41,9 +41,15 @@ class cbc
 		if (ReadFlags(args) != 0)
 			return;
 		
-		FileStream tokens;
-		if (tokens_flag)
-			tokens = File.Create("tokens.txt");
+		//FileStream tokens;
+		if (tokens_flag){
+			//tokens = File.Create("tokens.txt");
+			using(StreamWriter w = new StreamWriter(@"tokens.txt",false)){
+				w.WriteLine(""); //forces the file to clear if there was input on it before.
+			}
+			
+			
+		}
 		
 		string InputFile = args[args.Length-1];
 		
