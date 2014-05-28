@@ -1,5 +1,5 @@
 /* CbParser.y */
-
+%using System.IO;
 // The grammar shown in this file is INCOMPLETE!!
 // It does not support class inheritance, it does not permit
 // classes to contain methods (other than Main).

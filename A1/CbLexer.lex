@@ -14,8 +14,8 @@
     Console.WriteLine("{0}: {1}", msg, args);
   }
 
-  public int LineNumber { get{return yyline;} }    
-  
+  public int LineNumber { get{return yyline;} }
+
   public void foundComment(){
 	if(cbc.debug_flag){
 		Console.WriteLine("Consumed comment line {0}", yyline);
@@ -25,22 +25,37 @@
 		if(cbc.debug_flag){
 			Console.WriteLine("Multiline comment start {0}", yyline);
 		}
-	} 
+	}
 	public void finishMultiLineComment(){
 		if(cbc.debug_flag){
 			Console.WriteLine("Multiline comment start {0}", yyline);
 		}
-	} 
-	
-	public void printTokensToFile(){
-		using (StreamWriter w = new StreamWriter("tokens.txt", true)){
-			w.Write("Word ");
-			w.WriteLine("word 21");
-			w.WriteLine("Line");
-		}
-
 	}
-	
+
+	public bool foundToken = false;
+
+	public void printTokenToFile(String tokenName){
+		if(cbc.tokens_flag){
+			using (StreamWriter w = new StreamWriter("tokens.txt", true)){
+				w.Write("Token.Kwd_{0}",tokenName);
+				foundToken = true;
+			}
+		}
+	}
+
+	public void printIdentToFile(String identName){
+		if(cbc.tokens_flag){
+			using (StreamWriter w = new StreamWriter("tokens.txt", true)){
+				if(foundToken){
+					w.WriteLine(", Text \"{0}\"",identName);
+					foundToken = false;
+				}else{
+					w.WriteLine("Token \"{0}\"",identName);
+				}
+			}
+		}
+	}
+
 %}
 
 quotes [\'\"]
@@ -59,7 +74,7 @@ class       {last_token_text=yytext;return (int)Tokens.Kwd_class;}
 const       {last_token_text=yytext;return (int)Tokens.Kwd_const;}
 else        {last_token_text=yytext;return (int)Tokens.Kwd_else;}
 if          {last_token_text=yytext;return (int)Tokens.Kwd_if;}
-int         {last_token_text=yytext;printTokensToFile();return (int)Tokens.Kwd_int;}
+int         {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_int;}
 new         {last_token_text=yytext;return (int)Tokens.Kwd_new;}
 null        {last_token_text=yytext;return (int)Tokens.Kwd_null;}
 out         {last_token_text=yytext;return (int)Tokens.Kwd_out;}
@@ -76,7 +91,7 @@ while       {last_token_text=yytext;return (int)Tokens.Kwd_while;}
 ++          {last_token_text=yytext;return (int)Tokens.PLUSPLUS;}
 --          {last_token_text=yytext;return (int)Tokens.MINUSMINUS;}
 0|[1-9][0-9]*|0x[0-9a-fA-F][0-9a-fA-F]*    {last_token_text=yytext;return (int)Tokens.Number;}
-[a-zA-Z][a-zA-Z0-9_]*   {last_token_text=yytext;return (int)Tokens.Ident;}
+[a-zA-Z][a-zA-Z0-9_]*   {last_token_text=yytext;printIdentToFile(yytext);return (int)Tokens.Ident;}
 {opchar}        {return (int)(yytext[0]);}
 
 .              { yyerror("illegal character ({0})", yytext); }
