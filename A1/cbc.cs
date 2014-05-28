@@ -61,7 +61,7 @@ class cbc
 
         parser.Parse();
         //print out final messages
-        Console.WriteLine("{0} lines from file {1} were parsed successfully",237,args[args.Length-1]);
+        Console.WriteLine("{0} lines from file {1} were parsed successfully",parser.LineNumber,args[args.Length-1]);
 	}
 
 }
