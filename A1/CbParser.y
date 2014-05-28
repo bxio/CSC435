@@ -25,7 +25,7 @@
 %token      Kwd_break Kwd_char Kwd_class Kwd_const Kwd_else Kwd_if Kwd_int
 %token      Kwd_new Kwd_null Kwd_out Kwd_override Kwd_public Kwd_return
 %token      Kwd_static Kwd_string Kwd_using Kwd_virtual Kwd_void Kwd_while
-%token      PLUSPLUS MINUSMINUS Ident Number StringConst
+%token      PLUSPLUS MINUSMINUS Ident Number StringConst SingleChar
 
 %%
 
@@ -70,8 +70,13 @@ IdentList:      IdentList ',' Ident
         |       Ident
         ;
 
-MethodDecl:     Kwd_public MethodDeclModifier MethodDeclType Ident '(' OptFormals ')' Block
+MethodDecl:     MethodSecurity MethodDeclModifier MethodDeclType Ident '(' OptFormals ')' Block
         ;
+		
+MethodSecurity:	Kwd_public
+		|		/* empty */
+		;
+		
 MethodDeclModifier: Kwd_static
 				|				Kwd_virtual
 				|				Kwd_override
@@ -95,6 +100,7 @@ Type:           TypeName
 TypeName:       Ident
         |       Kwd_int
         |       Kwd_string
+		|		Kwd_char
         ;
 
 Statement:      Designator '=' Expr ';'
@@ -125,10 +131,10 @@ OptElsePart:    Kwd_else Statement
 Block:          '{' DeclsAndStmts '}'
         ;
 
-LocalDecl:      Ident IdentList ';'
-        |       Ident '[' ']' IdentList ';'
+LocalDecl:      Type IdentList ';'
+		|		Type Ident '=' Expr ';'
         ;
-
+		
 DeclsAndStmts:   /* empty */
         |       DeclsAndStmts Statement
         |       DeclsAndStmts LocalDecl
@@ -151,10 +157,11 @@ Expr:           Expr OROR Expr
         |       Designator
         |       Designator '(' OptActuals ')'
         |       Number
+		|		SingleChar
         |       StringConst
         |       StringConst '.' Ident // Ident must be "Length"
-        |       Kwd_new Ident '(' ')'
-        |       Kwd_new Ident '[' Expr ']'
+        |       Kwd_new Ident '(' OptActuals ')'
+        |       Kwd_new TypeName '[' Expr ']'
         |       '(' Expr ')'
         ;
 

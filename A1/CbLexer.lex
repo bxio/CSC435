@@ -28,7 +28,7 @@
 	}
 	public void finishMultiLineComment(){
 		if(cbc.debug_flag){
-			Console.WriteLine("Multiline comment start {0}", yyline);
+			Console.WriteLine("Multiline comment end {0}", yyline);
 		}
 	}
 
@@ -37,7 +37,7 @@
 	public void printTokenToFile(String tokenName){
 		if(cbc.tokens_flag){
 			using (StreamWriter w = new StreamWriter("tokens.txt", true)){
-				w.Write("Token.Kwd_{0}",tokenName);
+				w.Write("Token.Kwd_{0} ",tokenName);
 				foundToken = true;
 			}
 		}
@@ -47,21 +47,20 @@
 		if(cbc.tokens_flag){
 			using (StreamWriter w = new StreamWriter("tokens.txt", true)){
 				if(foundToken){
-					w.WriteLine(", Text \"{0}\"",identName);
+					w.WriteLine(", Ident \"{0}\" ",identName);
 					foundToken = false;
 				}else{
-					w.WriteLine("Token \"{0}\"",identName);
+					w.WriteLine("Token \"{0}\" ",identName);
 				}
 			}
 		}
 	}
-
+	
 %}
 
 quotes [\'\"]
 space [ \n\r\t]
 opchar [+\-*/%=\(\)\{\}\[\]\;\^] // must escape "-" as it signifies a range
-
 %%
 {space}     {}
 ([/][/]){1}[^\n]*        {foundComment();} //Single line comments.
@@ -82,17 +81,18 @@ override    {last_token_text=yytext;return (int)Tokens.Kwd_override;}
 public      {last_token_text=yytext;return (int)Tokens.Kwd_public;}
 return      {last_token_text=yytext;return (int)Tokens.Kwd_return;}
 static      {last_token_text=yytext;return (int)Tokens.Kwd_static;}
-string      {last_token_text=yytext;return (int)Tokens.Kwd_string;}
+string      {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_string;}
 using       {last_token_text=yytext;return (int)Tokens.Kwd_using;}
 virtual     {last_token_text=yytext;return (int)Tokens.Kwd_virtual;}
 void        {last_token_text=yytext;return (int)Tokens.Kwd_void;}
 while       {last_token_text=yytext;return (int)Tokens.Kwd_while;}
-
 ++          {last_token_text=yytext;return (int)Tokens.PLUSPLUS;}
 --          {last_token_text=yytext;return (int)Tokens.MINUSMINUS;}
 0|[1-9][0-9]*|0x[0-9a-fA-F][0-9a-fA-F]*    {last_token_text=yytext;return (int)Tokens.Number;}
 [a-zA-Z][a-zA-Z0-9_]*   {last_token_text=yytext;printIdentToFile(yytext);return (int)Tokens.Ident;}
 {opchar}        {return (int)(yytext[0]);}
+["][a-zA-Z]["]		{last_token_text=yytext;return (int)Tokens.SingleChar;}
+["](.*)["]			{last_token_text=yytext;return (int)Tokens.StringConst;}
 
 .              { yyerror("illegal character ({0})", yytext); }
 %%
