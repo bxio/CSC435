@@ -48,6 +48,8 @@ ClassList:	    ClassList ClassDecl
 
 ClassDecl:		Kwd_class Ident '{'  DeclList  '}'
 		|		Kwd_class Ident '{'  DeclList  '}' ':' Ident // inheritance
+		|		FieldDeclList
+		|		MethodDecl
 		;
 
 DeclList:       DeclList ConstDecl
@@ -73,9 +75,15 @@ IdentList:      IdentList ',' Ident
         |       Ident
         ;
 
-MethodDecl:     Kwd_public Kwd_static Kwd_void Ident '(' OptFormals ')' Block
+MethodDecl:     Kwd_public MethodDeclModifier MethodDeclType Ident '(' OptFormals ')' Block
         ;
-
+MethodDeclModifier: Kwd_static
+				|				Kwd_virtual
+				|				Kwd_override
+				;
+MethodDeclType: Kwd_void
+				|				Type
+				;
 OptFormals:     /* empty */
         |       FormalPars
         ;
@@ -166,6 +174,7 @@ Qualifiers:     '.' Ident Qualifiers
         ;
 
 %%
+
 //string filename;
 FrontEnd.Scanner lexer;
 
