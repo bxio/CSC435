@@ -47,13 +47,12 @@ ClassList:	    ClassList ClassDecl
 		;
 
 ClassDecl:		Kwd_class Ident '{'  DeclList  '}'
-		|		Kwd_class Ident '{'  DeclList  '}' ':' Ident // inheritance
-		|		FieldDeclList
-		|		MethodDecl
+		|		Kwd_class Ident '{'  DeclList  '}' ':' Ident // To support Inheritance
 		;
 
 DeclList:       DeclList ConstDecl
         |       DeclList MethodDecl
+        |       DeclList FieldDecl
         |       /* empty */
         ;
 
@@ -62,10 +61,6 @@ ConstDecl:      Kwd_public Kwd_const Type Ident '=' InitVal ';'
 
 InitVal:        Number
         |       StringConst
-        ;
-
-FieldDeclList:  FieldDeclList FieldDecl
-        |       /* empty */
         ;
 
 FieldDecl:      Kwd_public Type IdentList ';'
