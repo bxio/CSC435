@@ -61,7 +61,7 @@ class cbc
 
         parser.Parse();
         //print out final messages
-        Console.WriteLine("{0} lines from file {1} were parsed successfully",237,"cbtest.cs");
+        Console.WriteLine("{0} lines from file {1} were parsed successfully",237,args[args.Length-1]);
 	}
 
 }
