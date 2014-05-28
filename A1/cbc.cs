@@ -47,8 +47,6 @@ class cbc
 			using(StreamWriter w = new StreamWriter(@"tokens.txt",false)){
 				w.WriteLine(""); //forces the file to clear if there was input on it before.
 			}
-
-
 		}
 
 		string InputFile = args[args.Length-1];

@@ -55,7 +55,7 @@
 			}
 		}
 	}
-	
+
 %}
 
 quotes [\'\"]
@@ -67,27 +67,27 @@ opchar [+\-*/%=\(\)\{\}\[\]\;\^] // must escape "-" as it signifies a range
 ([/][*]){1}[^(\*/)]*		{startMultiLineComment();}//multiline comments
 ([\*][/])				{finishMultiLineComment();}//multiline comments
 
-break       {last_token_text=yytext;return (int)Tokens.Kwd_break;}
-char        {last_token_text=yytext;return (int)Tokens.Kwd_char;}
-class       {last_token_text=yytext;return (int)Tokens.Kwd_class;}
-const       {last_token_text=yytext;return (int)Tokens.Kwd_const;}
-else        {last_token_text=yytext;return (int)Tokens.Kwd_else;}
-if          {last_token_text=yytext;return (int)Tokens.Kwd_if;}
+break       {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_break;}
+char        {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_char;}
+class       {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_class;}
+const       {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_const;}
+else        {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_else;}
+if          {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_if;}
 int         {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_int;}
-new         {last_token_text=yytext;return (int)Tokens.Kwd_new;}
-null        {last_token_text=yytext;return (int)Tokens.Kwd_null;}
-out         {last_token_text=yytext;return (int)Tokens.Kwd_out;}
-override    {last_token_text=yytext;return (int)Tokens.Kwd_override;}
-public      {last_token_text=yytext;return (int)Tokens.Kwd_public;}
-return      {last_token_text=yytext;return (int)Tokens.Kwd_return;}
-static      {last_token_text=yytext;return (int)Tokens.Kwd_static;}
+new         {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_new;}
+null        {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_null;}
+out         {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_out;}
+override    {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_override;}
+public      {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_public;}
+return      {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_return;}
+static      {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_static;}
 string      {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_string;}
-using       {last_token_text=yytext;return (int)Tokens.Kwd_using;}
-virtual     {last_token_text=yytext;return (int)Tokens.Kwd_virtual;}
-void        {last_token_text=yytext;return (int)Tokens.Kwd_void;}
-while       {last_token_text=yytext;return (int)Tokens.Kwd_while;}
-++          {last_token_text=yytext;return (int)Tokens.PLUSPLUS;}
---          {last_token_text=yytext;return (int)Tokens.MINUSMINUS;}
+using       {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_using;}
+virtual     {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_virtual;}
+void        {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_void;}
+while       {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_while;}
+++          {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.PLUSPLUS;}
+--          {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.MINUSMINUS;}
 0|[1-9][0-9]*|0x[0-9a-fA-F][0-9a-fA-F]*    {last_token_text=yytext;return (int)Tokens.Number;}
 [a-zA-Z][a-zA-Z0-9_]*   {last_token_text=yytext;printIdentToFile(yytext);return (int)Tokens.Ident;}
 {opchar}        {return (int)(yytext[0]);}
