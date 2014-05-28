@@ -83,12 +83,10 @@ OptFormals:     /* empty */
         |       FormalPars
         ;
 
-FormalPars:     FormalDecl
-        |       FormalPars ',' FormalDecl
+FormalPars:     Type Ident
+        |       FormalPars ',' Type Ident
         ;
 
-FormalDecl:     Type Ident
-        ;
 
 Type:           TypeName
         |       TypeName '[' ']'
