@@ -87,16 +87,16 @@ virtual     {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.
 void        {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_void;}
 while       {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_while;}
 
-++          {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.PLUSPLUS;}
---          {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.MINUSMINUS;}
-==			{last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.EQEQ;}
-\|\|		{last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.OROR;}
-&&			{last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.ANDAND;}
-!=			{last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.NOTEQ;}
->=			{last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.GTEQ;}
-\<=			{last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.LTEQ;}
+++          {last_token_text=yytext;printTokenToFile("PLUSPLUS");return (int)Tokens.PLUSPLUS;}
+--          {last_token_text=yytext;printTokenToFile("MINUSMINUS");return (int)Tokens.MINUSMINUS;}
+==			{last_token_text=yytext;printTokenToFile("EQEQ");return (int)Tokens.EQEQ;}
+\|\|		{last_token_text=yytext;printTokenToFile("OROR");return (int)Tokens.OROR;}
+&&			{last_token_text=yytext;printTokenToFile("ANDAND");return (int)Tokens.ANDAND;}
+!=			{last_token_text=yytext;printTokenToFile("NOTEQ");return (int)Tokens.NOTEQ;}
+>=			{last_token_text=yytext;printTokenToFile("GTEQ");return (int)Tokens.GTEQ;}
+\<=			{last_token_text=yytext;printTokenToFile("LTEQ");return (int)Tokens.LTEQ;}
 
-0|[1-9][0-9]*|0x[0-9a-fA-F][0-9a-fA-F]*    {last_token_text=yytext;return (int)Tokens.Number;}
+0|[1-9][0-9]*|0x[0-9a-fA-F][0-9a-fA-F]*    {last_token_text=yytext;printIdentToFile(yytext);return (int)Tokens.Number;}
 [a-zA-Z][a-zA-Z0-9_]*   {last_token_text=yytext;printIdentToFile(yytext);return (int)Tokens.Ident;}
 {opchar}        {return (int)(yytext[0]);}
 ['].?[']		{last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.SingleChar;}
