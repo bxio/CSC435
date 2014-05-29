@@ -47,7 +47,7 @@ ClassList:	    ClassList ClassDecl
 		;
 
 ClassDecl:		Kwd_class Ident '{'  DeclList  '}'
-		|		Kwd_class Ident '{'  DeclList  '}' ':' Ident // To support Inheritance
+		|		Kwd_class Ident ':' Ident '{'  DeclList  '}' // To support Inheritance
 		;
 
 DeclList:       DeclList ConstDecl
@@ -72,11 +72,11 @@ IdentList:      IdentList ',' Ident
 
 MethodDecl:     MethodSecurity MethodDeclModifier MethodDeclType Ident '(' OptFormals ')' Block
         ;
-
+		
 MethodSecurity:	Kwd_public
-				|       /* empty */
-				;
-
+		|		/* empty */
+		;
+		
 MethodDeclModifier: Kwd_static
 				|				Kwd_virtual
 				|				Kwd_override
@@ -92,6 +92,7 @@ FormalPars:     Type Ident
         |       FormalPars ',' Type Ident
         ;
 
+
 Type:           TypeName
         |       TypeName '[' ']'
         ;
@@ -99,7 +100,7 @@ Type:           TypeName
 TypeName:       Ident
         |       Kwd_int
         |       Kwd_string
-				|       Kwd_char
+		|		Kwd_char
         ;
 
 Statement:      Designator '=' Expr ';'
@@ -133,7 +134,7 @@ Block:          '{' DeclsAndStmts '}'
 LocalDecl:      Type IdentList ';'
 		|		Type Ident '=' Expr ';'
         ;
-
+		
 DeclsAndStmts:   /* empty */
         |       DeclsAndStmts Statement
         |       DeclsAndStmts LocalDecl
@@ -156,12 +157,13 @@ Expr:           Expr OROR Expr
         |       Designator
         |       Designator '(' OptActuals ')'
         |       Number
-				|       SingleChar
+		|		SingleChar
         |       StringConst
         |       StringConst '.' Ident // Ident must be "Length"
         |       Kwd_new Ident '(' OptActuals ')'
         |       Kwd_new TypeName '[' Expr ']'
         |       '(' Expr ')'
+		|		Kwd_null 
         ;
 
 Designator:     Ident Qualifiers

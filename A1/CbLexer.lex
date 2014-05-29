@@ -58,9 +58,9 @@
 
 %}
 
-quotes [\'\"]
+special [\?@\#\\\-`~]
 space [ \n\r\t]
-opchar [+\-*/%=\(\)\{\}\[\]\;\^] // must escape "-" as it signifies a range
+opchar [|&!>\<\.:,+\-*/%=\(\)\{\}\[\]\;\^\'\"] // must escape "-" as it signifies a range
 %%
 {space}     {}
 ([/][/]){1}[^\n]*        {foundComment();} //Single line comments.
@@ -86,13 +86,21 @@ using       {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.
 virtual     {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_virtual;}
 void        {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_void;}
 while       {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.Kwd_while;}
+
 ++          {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.PLUSPLUS;}
 --          {last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.MINUSMINUS;}
+==			{last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.EQEQ;}
+\|\|		{last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.OROR;}
+&&			{last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.ANDAND;}
+!=			{last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.NOTEQ;}
+>=			{last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.GTEQ;}
+\<=			{last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.LTEQ;}
+
 0|[1-9][0-9]*|0x[0-9a-fA-F][0-9a-fA-F]*    {last_token_text=yytext;return (int)Tokens.Number;}
 [a-zA-Z][a-zA-Z0-9_]*   {last_token_text=yytext;printIdentToFile(yytext);return (int)Tokens.Ident;}
 {opchar}        {return (int)(yytext[0]);}
-["][a-zA-Z]["]		{last_token_text=yytext;return (int)Tokens.SingleChar;}
-["](.*)["]			{last_token_text=yytext;return (int)Tokens.StringConst;}
+['].?[']		{last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.SingleChar;}
+["].*["]			{last_token_text=yytext;printTokenToFile(yytext);return (int)Tokens.StringConst;}
 
 .              { yyerror("illegal character ({0})", yytext); }
 %%
