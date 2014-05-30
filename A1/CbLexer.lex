@@ -67,11 +67,11 @@
 				bool ident = type.Equals("Ident",StringComparison.OrdinalIgnoreCase);
 				bool number = type.Equals("Number",StringComparison.OrdinalIgnoreCase);
 				//bool comp = type.Equals("comp",StringComparison.OrdinalIgnoreCase);
-				
-				if (str || chars || ident || constant) 
+
+				if (str || chars || ident || constant)
 				{
 					w.WriteLine("Token.{0}, text = {1}",type,token);
-				} 
+				}
 				else if (number)
 				{
 					w.WriteLine("Token.{0}, num = {1}", type,token);
@@ -80,14 +80,10 @@
 				{
 					w.WriteLine("Token.\"{0}\"",token);
 				}
-				//else
-				//{
-				//	w.WriteLine("Token.")
-				//}
-			}		
+			}
 		}
 	}
-	
+
 %}
 
 special [\?@\#\\`~]
