@@ -55,7 +55,9 @@
 	}
 
 	public void checkNestedComments(){
-		Console.WriteLine("Reached end of file.");
+		if(cbc.debug_flag){
+			Console.WriteLine("---Reached end of file.---");
+		}
 		if(levelsOfComment > 0){
 			//more '/*' than '*/'
 			yyerror("Improperly nested comment, too many opening '/*'.");
@@ -150,14 +152,14 @@ virtual     {last_token_text=yytext;tok_output_file("any",yytext);return (int)To
 void        {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.Kwd_void;}
 while       {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.Kwd_while;}
 
-(\+\+)        {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.PLUSPLUS;}
+(\+\+)      {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.PLUSPLUS;}
 (\-\-)      {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.MINUSMINUS;}
-(==)		{last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.EQEQ;}
-(\|\|)		{last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.OROR;}
-(&&)		{last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.ANDAND;}
-(!=)		{last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.NOTEQ;}
-(>=)		{last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.GTEQ;}
-(\<=)		{last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.LTEQ;}
+(==)        {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.EQEQ;}
+(\|\|)      {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.OROR;}
+(&&)        {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.ANDAND;}
+(!=)        {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.NOTEQ;}
+(>=)        {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.GTEQ;}
+(\<=)       {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.LTEQ;}
 
 0|(\-)?[1-9][0-9]*|0x[0-9a-fA-F][0-9a-fA-F]*    {last_token_text=yytext;tok_output_file("Number",yytext);return (int)Tokens.Number;}
 [a-zA-Z][a-zA-Z0-9_]*   {last_token_text=yytext;tok_output_file("Ident",yytext);return (int)Tokens.Ident;}
@@ -169,4 +171,3 @@ while       {last_token_text=yytext;tok_output_file("any",yytext);return (int)To
 %%
 
 public string last_token_text = "";
-
