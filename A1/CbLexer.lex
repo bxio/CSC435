@@ -2,30 +2,50 @@
 %tokentype Tokens
 
 %{
-  public override void yyerror( string msg, params object[] args ) {
-    Console.WriteLine("{0}: ", yyline);
-    if (args == null || args.Length == 0)
-      Console.WriteLine("{0}", msg);
-    else
-      Console.WriteLine(msg, args);
-  }
 
-  public void yyerror( int lineNum, string msg, params object[] args ) {
-    Console.WriteLine("{0}: {1}", msg, args);
-  }
+	/* *********************************************
+		 *                                           *
+		 *         Errors and Error handling         *
+		 *                                           *
+		 ********************************************* */
+	public bool hasError = false; //we'll begin with the (probably wrong) assumption that you know what you are doing.
+	public int errorCount = 0;
 
-  public int LineNumber { get{return yyline;} }
+	public override void yyerror( string msg, params object[] args ) {
+		Console.WriteLine("{0}: ", yyline);
+		if (args == null || args.Length == 0)
+			Console.WriteLine("{0}", msg);
+		else
+			Console.WriteLine(msg, args);
+	}
 
-  public void foundComment(){
+	public void yyerror( int lineNum, string msg, params object[] args ) {
+		Console.WriteLine("{0}: {1}", msg, args);
+	}
+
+	public int LineNumber { get{return yyline;} }
+
+
+	/* ************************************
+		 *                                  *
+		 *         Comment handling         *
+		 *                                  *
+		 ************************************ */
+
+	public int levelsOfComment = 0;
+	public int lineOfLastStartComment = 0;
+	public int lineOfLastEndComment = 0;
+
+	public void foundSingleLineComment(){
 		if(cbc.debug_flag){
 			Console.WriteLine("Single line Comment {0}", yyline);
 		}
-  }
-  public int levelsOfComment = 0;
-  public int lineOfLastEndComment = 0;
+	}
+
 
 	public void startMultiLineComment(){
 		levelsOfComment++;
+		lineOfLastStartComment = yyline;
 		if(cbc.debug_flag){
 			Console.WriteLine("Multiline comment start {0}", yyline);
 		}
@@ -41,14 +61,21 @@
 
 	public void checkNestedComments(){
 		Console.WriteLine("Reached end of file.");
-		if(levelsOfComment != 0){
-			//throw an error
-			yyerror("Improperly nested comment.");
-			if(cbc.debug_flag){
-				Console.WriteLine("Improper nested comment on line {0}", lineOfLastEndComment);
-			}
+		if(levelsOfComment > 0){
+			//more '/*' than '*/'
+			yyerror("Improperly nested comment, too many starting '/*' blocks. ");
+		}else if(levelsOfComment < 0){
+			//more '*/' than '/*'
+			yyerror("Improperly nested comment, too many ending '*/' blocks. Last found {0}", lineOfLastEndComment);
 		}
+
 	}
+
+	/* *********************************************
+		 *                                           *
+		 *         Tokens and Token Printing         *
+		 *                                           *
+		 ********************************************* */
 
 	public bool foundToken = false;
 
@@ -73,6 +100,7 @@
 			}
 		}
 	}
+
 	// printing for strings, chars, and keywords
 	public void tok_output_file(String type, String token)
 	{
@@ -110,7 +138,7 @@ opchar [|&!>\<\.:,+\-*/%=\(\)\{\}\[\]\;\^\'\"] // must escape "-" as it signifie
 %%
 
 {space}     {}
-([/][/]){1}[^\n]*        {foundComment();} //Single line comments.
+([/][/]){1}[^\n]*        {foundSingleLineComment();} //Single line comments.
 ([/][*]){1}[^(\*/)]*		{startMultiLineComment();}//multiline comments
 ([\*][/]){1}				{finishMultiLineComment();}//multiline comments
 <<EOF>>							{checkNestedComments();}
