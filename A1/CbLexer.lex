@@ -40,27 +40,39 @@
 
 	public int levelsOfComment = 0;
 
-	public void foundSingleLineComment(){
+	/// <summary>
+	/// Prints a debug message for a single line comment.
+	/// </summary>
+	public void commentLineStart(){
 		if(cbc.debug_flag){
 			Console.WriteLine("Single line Comment {0}", yyline);
 		}
 	}
 
-	public void startMultiLineComment(){
+	/// <summary>
+	/// Starts a comment block and increments the comment level.
+	/// </summary>
+	public void commentBlockStart(){
 		levelsOfComment++;
 		if(cbc.debug_flag){
 			Console.WriteLine("Multiline comment start {0}", yyline);
 		}
 	}
-
-	public void finishMultiLineComment(){
+	/// <summary>
+	/// Decrements the comment level
+	/// </summary>
+	public void commentBlockEnd(){
 		levelsOfComment--;
 		if(cbc.debug_flag){
 			Console.WriteLine("Multiline comment end {0}, levels {1}", yyline, levelsOfComment);
 		}
 	}
-
-	public void checkNestedComments(){
+	/// <summary>
+	/// This method should be called when the End-of-File character is encountered.
+	/// Once called, it checks whether comments are nested properly. If not, an appropiate
+	/// error message is printed out to console.
+	/// </summary>
+	public void checkCorrectlyNestedCommentBlocks(){
 		if(cbc.debug_flag){
 			Console.WriteLine("---Reached end of file.---");
 		}
@@ -80,7 +92,9 @@
 		 ********************************************* */
 
 	public bool foundToken = false;
-
+	/// <summary>
+	/// Prints out the keyword token to tokens file.
+	/// </summary>
 	public void printTokenToFile(String tokenName){
 		if(cbc.tokens_flag){
 			using (StreamWriter w = new StreamWriter("tokens.txt", true)){
@@ -89,7 +103,9 @@
 			}
 		}
 	}
-
+	/// <summary>
+	/// Prints ident to tokens file
+	/// </summary>
 	public void printIdentToFile(String identName){
 		if(cbc.tokens_flag){
 			using (StreamWriter w = new StreamWriter("tokens.txt", true)){
@@ -102,8 +118,9 @@
 			}
 		}
 	}
-
-	// printing for strings, chars, and keywords
+	/// <summary>
+	/// printing for strings, chars, and keywords
+	/// </summary>
 	public void tok_output_file(String type, String token){
 		if (cbc.tokens_flag){
 			using (StreamWriter w = new StreamWriter("tokens.txt", true)){
@@ -133,10 +150,10 @@ opchar [|&!>\<\.:,+\-*/%=\(\)\{\}\[\]\;\^\'\"] // must escape "-" as it signifie
 %%
 
 {space}     {}
-([/][/]){1}[^\n]*        {foundSingleLineComment();} //Single line comments.
-([/][*]){1}[^(\*/)]*		{startMultiLineComment();}//multiline comments
-([\*][/]){1}				{finishMultiLineComment();}//multiline comments
-<<EOF>>							{checkNestedComments();}
+([/][/]){1}[^\n]*        {commentLineStart();} //Single line comments.
+([/][*]){1}[^(\*/)]*		{commentBlockStart();}//multiline comments
+([\*][/]){1}				{commentBlockEnd();}//multiline comments
+<<EOF>>							{checkCorrectlyNestedCommentBlocks();}
 
 break       {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.Kwd_break;}
 char        {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.Kwd_char;}
@@ -157,6 +174,7 @@ using       {last_token_text=yytext;tok_output_file("any",yytext);return (int)To
 virtual     {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.Kwd_virtual;}
 void        {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.Kwd_void;}
 while       {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.Kwd_while;}
+system       {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.Kwd_System;}
 
 (\+\+)      {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.PLUSPLUS;}
 (\-\-)      {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.MINUSMINUS;}

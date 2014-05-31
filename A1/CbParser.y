@@ -24,7 +24,7 @@
 // The order in which they are listed here does not matter.
 %token      Kwd_break Kwd_char Kwd_class Kwd_const Kwd_else Kwd_if Kwd_int
 %token      Kwd_new Kwd_null Kwd_out Kwd_override Kwd_public Kwd_return
-%token      Kwd_static Kwd_string Kwd_using Kwd_virtual Kwd_void Kwd_while
+%token      Kwd_static Kwd_string Kwd_System Kwd_using Kwd_virtual Kwd_void Kwd_while
 %token      PLUSPLUS MINUSMINUS Ident Number StringConst SingleChar
 
 %%
@@ -39,6 +39,7 @@ Program:        UsingList ClassList
         ;
 
 UsingList:      /* empty */
+		|		Kwd_using Kwd_System ';'
         |       Kwd_using Ident ';' UsingList
         ;
 
@@ -153,19 +154,27 @@ Expr:           Expr OROR Expr
         |       Expr '*' Expr
         |       Expr '/' Expr
         |       Expr '%' Expr
-        |       '-' Expr %prec UMINUS
-        |       Designator
-        |       Designator '(' OptActuals ')'
-        |       Number
-		|		SingleChar
-        |       StringConst
-        |       StringConst '.' Ident // Ident must be "Length"
+		|		ExprValue
         |       Kwd_new Ident '(' OptActuals ')'
         |       Kwd_new TypeName '[' Expr ']'
         |       '(' Expr ')'
 		|		Kwd_null
         ;
 
+ExprValue:		'(' Type ')' ExprValue1
+		|		ExprValue1		
+		;
+		
+ExprValue1:		Designator
+        |       Designator '(' OptActuals ')'
+		|       Number
+		|		SingleChar
+        |       StringConst
+        |       StringConst '.' Ident // Ident must be "Length"
+        |  		'-' Expr %prec UMINUS			
+		;		
+
+		
 Designator:     Ident Qualifiers
         ;
 
