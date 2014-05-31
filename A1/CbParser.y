@@ -72,11 +72,11 @@ IdentList:      IdentList ',' Ident
 
 MethodDecl:     MethodSecurity MethodDeclModifier MethodDeclType Ident '(' OptFormals ')' Block
         ;
-		
+
 MethodSecurity:	Kwd_public
 		|		/* empty */
 		;
-		
+
 MethodDeclModifier: Kwd_static
 				|				Kwd_virtual
 				|				Kwd_override
@@ -134,7 +134,7 @@ Block:          '{' DeclsAndStmts '}'
 LocalDecl:      Type IdentList ';'
 		|		Type Ident '=' Expr ';'
         ;
-		
+
 DeclsAndStmts:   /* empty */
         |       DeclsAndStmts Statement
         |       DeclsAndStmts LocalDecl
@@ -163,7 +163,7 @@ Expr:           Expr OROR Expr
         |       Kwd_new Ident '(' OptActuals ')'
         |       Kwd_new TypeName '[' Expr ']'
         |       '(' Expr ')'
-		|		Kwd_null 
+		|		Kwd_null
         ;
 
 Designator:     Ident Qualifiers
@@ -195,7 +195,4 @@ public void yyerror( string format, params Object[] args ) {
 
 // returns the lexer's current line number
 public int LineNumber { get{return lexer.LineNumber;} }
-
-
-
 

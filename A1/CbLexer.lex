@@ -17,18 +17,36 @@
   public int LineNumber { get{return yyline;} }
 
   public void foundComment(){
-	if(cbc.debug_flag){
-		Console.WriteLine("Consumed comment line {0}", yyline);
-	}
+		if(cbc.debug_flag){
+			Console.WriteLine("Single line Comment {0}", yyline);
+		}
   }
+  public int levelsOfComment = 0;
+  public int lineOfLastEndComment = 0;
+
 	public void startMultiLineComment(){
+		levelsOfComment++;
 		if(cbc.debug_flag){
 			Console.WriteLine("Multiline comment start {0}", yyline);
 		}
 	}
+
 	public void finishMultiLineComment(){
+		lineOfLastEndComment = yyline;
+		levelsOfComment--;
 		if(cbc.debug_flag){
-			Console.WriteLine("Multiline comment end {0}", yyline);
+			Console.WriteLine("Multiline comment end {0}, levels {1}", yyline, levelsOfComment);
+		}
+	}
+
+	public void checkNestedComments(){
+		Console.WriteLine("Reached end of file.");
+		if(levelsOfComment != 0){
+			//throw an error
+			yyerror("Improperly nested comment.");
+			if(cbc.debug_flag){
+				Console.WriteLine("Improper nested comment on line {0}", lineOfLastEndComment);
+			}
 		}
 	}
 
@@ -66,7 +84,6 @@
 				bool constant = type.Equals("StringConst",StringComparison.OrdinalIgnoreCase);
 				bool ident = type.Equals("Ident",StringComparison.OrdinalIgnoreCase);
 				bool number = type.Equals("Number",StringComparison.OrdinalIgnoreCase);
-				//bool comp = type.Equals("comp",StringComparison.OrdinalIgnoreCase);
 
 				if (str || chars || ident || constant)
 				{
@@ -95,7 +112,8 @@ opchar [|&!>\<\.:,+\-*/%=\(\)\{\}\[\]\;\^\'\"] // must escape "-" as it signifie
 {space}     {}
 ([/][/]){1}[^\n]*        {foundComment();} //Single line comments.
 ([/][*]){1}[^(\*/)]*		{startMultiLineComment();}//multiline comments
-([\*][/])				{finishMultiLineComment();}//multiline comments
+([\*][/]){1}				{finishMultiLineComment();}//multiline comments
+<<EOF>>							{checkNestedComments();}
 
 break       {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.Kwd_break;}
 char        {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.Kwd_char;}
@@ -117,7 +135,7 @@ virtual     {last_token_text=yytext;tok_output_file("any",yytext);return (int)To
 void        {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.Kwd_void;}
 while       {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.Kwd_while;}
 
-(++)        {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.PLUSPLUS;}
+(\+\+)        {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.PLUSPLUS;}
 (\-\-)      {last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.MINUSMINUS;}
 (==)		{last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.EQEQ;}
 (\|\|)		{last_token_text=yytext;tok_output_file("any",yytext);return (int)Tokens.OROR;}
