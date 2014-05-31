@@ -59,7 +59,12 @@ class cbc
 
         parser.Parse();
         //print out final messages
-        Console.WriteLine("{0} lines from file {1} were parsed successfully",parser.LineNumber,args[args.Length-1]);
+
+        if(parser.hasError){
+        	Console.Write("{0} Errors found in {1}", parser.errorCount, args[args.Length-1]);
+      	}else{
+      		Console.Write("{0} lines from file {1} were parsed successfully",parser.LineNumber, args[args.Length-1]);
+      	}
 	}
 
 }

@@ -13,14 +13,20 @@
 
 	public override void yyerror( string msg, params object[] args ) {
 		Console.WriteLine("{0}: ", yyline);
-		if (args == null || args.Length == 0)
+		errorCount++;
+		hasError = true;
+		if (args == null || args.Length == 0){
 			Console.WriteLine("{0}", msg);
-		else
+		}
+		else{
 			Console.WriteLine(msg, args);
+		}
 	}
 
 	public void yyerror( int lineNum, string msg, params object[] args ) {
 		Console.WriteLine("{0}: {1}", msg, args);
+		errorCount++;
+		hasError = true;
 	}
 
 	public int LineNumber { get{return yyline;} }
@@ -60,10 +66,10 @@
 		}
 		if(levelsOfComment > 0){
 			//more '/*' than '*/'
-			yyerror("Improperly nested comment, too many opening '/*'.");
+			yyerror("Improperly nested comment, too many opening '/*' blocks.");
 		}else if(levelsOfComment < 0){
 			//more '*/' than '/*'
-			yyerror("Improperly nested comment, too many closing '*/'.");
+			yyerror("Improperly nested comment, too many closing '*/' blocks.");
 		}
 	}
 

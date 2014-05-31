@@ -196,3 +196,7 @@ public void yyerror( string format, params Object[] args ) {
 // returns the lexer's current line number
 public int LineNumber { get{return lexer.LineNumber;} }
 
+//returns number of errors found in lexing the file.
+public int errorCount {get {return lexer.errorCount;}}
+//returns a boolean signifying whether ther is an error
+public bool hasError {get{return lexer.hasError;}}
