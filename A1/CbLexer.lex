@@ -33,8 +33,6 @@
 		 ************************************ */
 
 	public int levelsOfComment = 0;
-	public int lineOfLastStartComment = 0;
-	public int lineOfLastEndComment = 0;
 
 	public void foundSingleLineComment(){
 		if(cbc.debug_flag){
@@ -42,17 +40,14 @@
 		}
 	}
 
-
 	public void startMultiLineComment(){
 		levelsOfComment++;
-		lineOfLastStartComment = yyline;
 		if(cbc.debug_flag){
 			Console.WriteLine("Multiline comment start {0}", yyline);
 		}
 	}
 
 	public void finishMultiLineComment(){
-		lineOfLastEndComment = yyline;
 		levelsOfComment--;
 		if(cbc.debug_flag){
 			Console.WriteLine("Multiline comment end {0}, levels {1}", yyline, levelsOfComment);
@@ -63,12 +58,11 @@
 		Console.WriteLine("Reached end of file.");
 		if(levelsOfComment > 0){
 			//more '/*' than '*/'
-			yyerror("Improperly nested comment, too many starting '/*' blocks. ");
+			yyerror("Improperly nested comment, too many opening '/*'.");
 		}else if(levelsOfComment < 0){
 			//more '*/' than '/*'
-			yyerror("Improperly nested comment, too many ending '*/' blocks. Last found {0}", lineOfLastEndComment);
+			yyerror("Improperly nested comment, too many closing '*/'.");
 		}
-
 	}
 
 	/* *********************************************
@@ -102,10 +96,8 @@
 	}
 
 	// printing for strings, chars, and keywords
-	public void tok_output_file(String type, String token)
-	{
-		if (cbc.tokens_flag)
-		{
+	public void tok_output_file(String type, String token){
+		if (cbc.tokens_flag){
 			using (StreamWriter w = new StreamWriter("tokens.txt", true)){
 				bool str = type.Equals("string",StringComparison.OrdinalIgnoreCase);
 				bool chars = type.Equals("SingleChar",StringComparison.OrdinalIgnoreCase);
@@ -113,16 +105,11 @@
 				bool ident = type.Equals("Ident",StringComparison.OrdinalIgnoreCase);
 				bool number = type.Equals("Number",StringComparison.OrdinalIgnoreCase);
 
-				if (str || chars || ident || constant)
-				{
+				if (str || chars || ident || constant){
 					w.WriteLine("Token.{0}, text = {1}",type,token);
-				}
-				else if (number)
-				{
+				}else if (number){
 					w.WriteLine("Token.{0}, num = {1}", type,token);
-				}
-				else
-				{
+				}else{
 					w.WriteLine("Token.\"{0}\"",token);
 				}
 			}
