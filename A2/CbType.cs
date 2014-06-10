@@ -45,7 +45,11 @@ public abstract class CbType {
         return (arrayTypes[elt] = new CFArray(elt));
     }
 
+<<<<<<< HEAD
     public abstract void Print(TextWriter p, string prefix);
+=======
+    public abstract void Print(TextWriter p, string prefix="");
+>>>>>>> ab66bd085b59e4714bd95609dcac4f14a10d2166
 
     // This initialization method is needed to create the type descriptors
     // for classes and methods assumed to be available to Cb programs, and
