@@ -78,27 +78,39 @@ ClassDecl:      Kwd_class Identifier  '{'  DeclList  '}'
         ;
 
 DeclList:       /* empty */
+		//		{$$ = null;}
         |       DeclList ConstDecl
+		//		{$1.AddChild($2); $$ = $1;}
         |       DeclList FieldDecl
+		//		{$1.AddChild($2); $$ = $1;}
         |       DeclList MethodDecl
+		//		{$1.AddChild($2); $$ = $1;}
         ;
-
 ConstDecl:      Kwd_public Kwd_const Type Identifier '=' InitVal ';'
+				{ $$ = AST.NonLeaf(NodeType.Class, $2.LineNumber, $3, $4, $6); }
         ;
 
+// FIXME
 InitVal:        IntConst
+		//		{ $$ = AST.Leaf(NodeType.IntConst, $1.LineNumber, $1); }
         |       CharConst
+		//		{ $$ = AST.Leaf(NodeType.IntConst, $1.LineNumber, $1); }
         |       StringConst
+		//		{ $$ = AST.Leaf(NodeType.IntConst, $1.LineNumber, $1); }
         ;
 
 FieldDecl:      Kwd_public Type IdentList ';'
+		//		{ $$ = AST.NonLeaf(NodeType.Field, $2.LineNumber, $2, $3); }
         ;
 
 IdentList:      IdentList ',' Identifier
+				{ $1.AddChild($3); $$ = $1; }
         |       Identifier
+        { $$ = AST.Kary(NodeType.IdList, LineNumber); $$.AddChild($1); }
         ;
 
 MethodDecl:     Kwd_public MethodAttr MethodType Identifier '(' OptFormals ')' Block
+				{ $$ = AST.NonLeaf(NodeType.Method, LineNumber, null, $4, $6, $8); }
         ;
 
 MethodAttr:     Kwd_static
@@ -119,10 +131,13 @@ FormalPars:     FormalDecl
         ;
 
 FormalDecl:     Type Identifier
+				{ $$ = AST.NonLeaf(NodeType.Formal, LineNumber, $1, $2); }
         ;
 
 Type:           TypeName
+				{ $$ = $1; }
         |       TypeName '[' ']'
+        { $$ = AST.NonLeaf(NodeType.Array, LineNumber, $1); }
         ;
 
 TypeName:       Identifier
@@ -146,6 +161,7 @@ Statement:      Designator '=' Expr ';'
         |       Kwd_if '(' Expr ')' Statement
         { $$ = AST.NonLeaf(NodeType.While, LineNumber, $3, $5); }
         |       Kwd_while '(' Expr ')' Statement
+        { $$ = AST.NonLeaf(NodeType.While, LineNumber, $3, $5); }
         |       Kwd_break ';'
         { $$ = AST.Leaf(NodeType.Break, LineNumber); }
         |       Kwd_return ';'
