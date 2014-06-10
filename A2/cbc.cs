@@ -14,7 +14,7 @@ using FrontEnd;
 
 
 public class Start {
-    
+
     static AST DoParse( string filename, bool printTokens ) {
         AST result = null;
         FileStream src = File.OpenRead(filename);
@@ -24,14 +24,14 @@ public class Start {
             sc.TrackTokens("tokens.txt");
 
         Parser parser = new Parser(sc);
-    
+
         if (parser.Parse())
             result = parser.Tree;
 
         sc.CleanUp();
         return result;
     }
-    
+
     static void Usage() {
         string[] usage = {
             "Usage:",
@@ -47,7 +47,7 @@ public class Start {
         }
         System.Environment.Exit(1);  // terminate!
     }
-    
+
     public static void Main( string[] args ) {
         string filename = null;
         bool printAST = false;
@@ -98,13 +98,13 @@ public class Start {
         CbType.Initialize();  // initialize some predefined types and top-level namespace
 
         // Create and invoke your top-level namespace visitor here
-        
+
         if (printNS)
             NameSpace.Print();
 
 /*
         int numErrors;
-        
+
         // perform typechecking ...
 
         if (printASTtc) {

@@ -1,9 +1,9 @@
 /*  CbAST.cs
 
     Defines an Abstract Syntax Tree class for Cb programs
-    
+
     Author: Nigel Horspool
-    
+
     Date: 2012-2014
 */
 
@@ -44,7 +44,7 @@ public abstract class AST {
     public virtual void AddChild( AST ch ) {
         throw new Exception("AddChild only supported for k-ary nodes");
     }
- 
+
     // Note: this property definition overloads the array indexing operation.
     // If n is a reference to a node, then
     //          n[k]
@@ -76,7 +76,7 @@ public abstract class AST {
     static public AST_nonleaf NonLeaf( NodeType tag, int ln, params AST[] ch ) {
         return new AST_nonleaf(tag, ln, ch);
     }
-    
+
 }
 
 
@@ -114,7 +114,7 @@ public class AST_leaf : AST {
     public AST_leaf( NodeType tag, int ln ) : base(tag,ln) {
     	Sval = null; Ival = 0;
     }
-    
+
     // constructor when lexical value is a string (e.g. identifier)
     // this constructor is also used for a character constant
     public AST_leaf( NodeType tag, int ln, string s ) : base(tag,ln) {

@@ -1,9 +1,9 @@
 /*  CbPrVisitor.cs
 
     Defines a Print Visitor class for the CFlat AST
-    
+
     Author: Nigel Horspool
-    
+
     Dates: 2012-2014
 */
 
@@ -54,6 +54,9 @@ public class PrVisitor: Visitor {
                 ch.Accept(this, i);
             else
                 f.WriteLine("{0}{1}: -- missing child --", indentString(indent), i);
+        }
+        if (arity == 0){
+        	f.WriteLine("{0}-- no children --", indentString(indent));
         }
         indent--;
     }
