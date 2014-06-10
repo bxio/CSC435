@@ -80,7 +80,7 @@ ClassDecl:      Kwd_class Identifier  '{'  DeclList  '}'
 DeclList:       /* empty */
         |       DeclList ConstDecl
         |       DeclList FieldDecl
-        |       DeclList MethodDecl     
+        |       DeclList MethodDecl
         ;
 
 ConstDecl:      Kwd_public Kwd_const Type Identifier '=' InitVal ';'
@@ -136,19 +136,28 @@ BuiltInType:    Kwd_int
 
 Statement:      Designator '=' Expr ';'
         |       Designator '(' OptActuals ')' ';'
+        { $$ = AST.NonLeaf(NodeType.Call, LineNumber, $1, $3); }
         |       Designator PLUSPLUS ';'
+        { $$ = AST.NonLeaf(NodeType.PlusPlus, LineNumber, $1); }
         |       Designator MINUSMINUS ';'
+        { $$ = AST.NonLeaf(NodeType.MinusMinus, LineNumber, $1); }
         |       Kwd_if '(' Expr ')' Statement Kwd_else Statement
+        { $$ = AST.NonLeaf(NodeType.If, LineNumber, $3, $5, $6); }
         |       Kwd_if '(' Expr ')' Statement
+        { $$ = AST.NonLeaf(NodeType.While, LineNumber, $3, $5); }
         |       Kwd_while '(' Expr ')' Statement
         |       Kwd_break ';'
+        { $$ = AST.Leaf(NodeType.Break, LineNumber); }
         |       Kwd_return ';'
+        { $$ = AST.Kary(NodeType.Return, LineNumber); }
         |       Kwd_return Expr ';'
+        { $$ = AST.Kary(NodeType.Return, LineNumber); $$.AddChild($2); }
         |       Block
         |       ';'
         ;
 
 OptActuals:     /* empty */
+				{ $$ = AST.Leaf(NodeType.Empty, LineNumber); }
         |       ActPars
         ;
 
@@ -169,21 +178,34 @@ DeclsAndStmts:   /* empty */
         |       DeclsAndStmts LocalDecl
         ;
 
-Expr:           Expr OROR Expr
-        |       Expr ANDAND Expr
-        |       Expr EQEQ Expr
-        |       Expr NOTEQ Expr
-        |       Expr LTEQ Expr
-        |       Expr '<' Expr
-        |       Expr GTEQ Expr
-        |       Expr '>' Expr
-        |       Expr '+' Expr
-        |       Expr '-' Expr
-        |       Expr '*' Expr
-        |       Expr '/' Expr
-        |       Expr '%' Expr
-        |       UnaryExpr
-        ;
+Expr:		  Expr OROR Expr
+		{ $$ = AST.NonLeaf(NodeType.Or, LineNumber, $1, $3); }
+		| Expr ANDAND Expr
+		{ $$ = AST.NonLeaf(NodeType.And, LineNumber, $1, $3); }
+		| Expr EQEQ Expr
+		{ $$ = AST.NonLeaf(NodeType.Equals, LineNumber, $1, $3); }
+		| Expr NOTEQ Expr
+		{ $$ = AST.NonLeaf(NodeType.NotEquals, LineNumber, $1, $3); }
+		| Expr LTEQ Expr
+		{ $$ = AST.NonLeaf(NodeType.LessOrEqual, LineNumber, $1, $3); }
+		| Expr '<' Expr
+		{ $$ = AST.NonLeaf(NodeType.LessThan, LineNumber, $1, $3); }
+		| Expr GTEQ Expr
+		{ $$ = AST.NonLeaf(NodeType.GreaterOrEqual, LineNumber, $1, $3); }
+		| Expr '>' Expr
+		{ $$ = AST.NonLeaf(NodeType.GreaterThan, LineNumber, $1, $3); }
+		| Expr '+' Expr
+		{ $$ = AST.NonLeaf(NodeType.Add, LineNumber, $1, $3); }
+		| Expr '-' Expr
+		{ $$ = AST.NonLeaf(NodeType.Sub, LineNumber, $1, $3); }
+		| Expr '*' Expr
+		{ $$ = AST.NonLeaf(NodeType.Mul, LineNumber, $1, $3); }
+		| Expr '/' Expr
+		{ $$ = AST.NonLeaf(NodeType.Div, LineNumber, $1, $3); }
+		| Expr '%' Expr
+		{ $$ = AST.NonLeaf(NodeType.Mod, LineNumber, $1, $3); }
+    |       UnaryExpr
+    ;
 
 UnaryExpr:      '-' Expr
         |       UnaryExprNotUMinus
