@@ -1,9 +1,9 @@
 /*  CbType.cs
 
     Classes and types to describe the datatypes used in a Cb program
-    
+
     Author: Nigel Horspool
-    
+
     Dates: 2012-2014
 */
 
@@ -54,7 +54,7 @@ public abstract class CbType {
     public static void Initialize() {
         NameSpace system = (NameSpace)NameSpace.TopLevelNames.LookUp("System");
         system.AddMember(CbType.Object);
-        
+
         // Provide String class with String.Substring and String.Length members
         CbClass st = CbType.String;
         CbMethod sub = new CbMethod("Substring", false, st, new List<CbType> { CbType.Int, CbType.Int });
@@ -68,7 +68,7 @@ public abstract class CbType {
         con.AddMember(new CbMethod("Write", true, CbType.Void, new List<CbType> { CbType.Object }));
         con.AddMember(new CbMethod("ReadLine", true, CbType.String, new List<CbType> { }));
         system.AddMember(con);
-        
+
         CbClass i32 = new CbClass("Int32", null);
         i32.AddMember(new CbMethod("Parse", true, CbType.Int, new List<CbType> {st}));
         system.AddMember(i32);
@@ -86,7 +86,7 @@ public class CFArray: CbType {
     public override string ToString() {
         return System.String.Format("{0}[]", ElementType);
     }
-    
+
     public override void Print(TextWriter p) {
         p.Write(this.ToString());
     }
@@ -121,7 +121,7 @@ public class CbClass: CbType {
     public override void Print(TextWriter p, string prefix="") {
         p.Write("\nclass {0}{1} : {2}", prefix, Name, Parent==null? "null" : Parent.Name);
         p.WriteLine(" {");
-        
+
         // output the fields
         foreach( CbMember cm in Members.Values ) {
             CbField cf = cm as CbField;
@@ -213,7 +213,7 @@ public class CbField: CbMember {
 public class CbMethod: CbMember {
     public CbType ResultType{ get; set; }
     public IList<CbType> ArgType { get; set; }
-    
+
     public CbMethod( string nm, bool isStatic, CbType rt, IList<CbType> argType ) {
        Name = nm;  IsStatic = isStatic;
        ResultType = rt; ArgType = argType;
