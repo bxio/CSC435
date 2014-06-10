@@ -1,0 +1,18 @@
+Corrections  and Clarifications
+
+1. When building the top-level symbol table, information entered for members
+   of classes does not include any datatype information at this time. (Such
+   information cannot be completely entered because we don't know what all
+   the classes are in the program.)
+   A null pointer can be used instead of any type descriptor reference when
+   creating a descriptor for a class member. Similarly null can be used
+   instead of a list for a method's argument types.
+   Adding in all the missing information and the type checking will be a
+   big component of Assignment 3. For know, we need to know only the names
+   of class members, what kind of member they are, and for a method whether
+   it is static or not static (both virtual and override mean not static).
+
+***
+
+This list is likely to grow as questions are asked and issues are found
+with the assignment specification.

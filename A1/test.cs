@@ -9,12 +9,14 @@ class Test{
 		return 0;
 	}
 	/*This is a
-	multiple
-	line
+	multiple /*
+	line incorrectly nested
 	comment */
+
 	public static void Main(String[] args){
 
 		int x = 2;
+		int y = x;
 		//qwerty
 		if(x==2){
 			int y = 3;
