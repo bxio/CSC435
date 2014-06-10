@@ -1,5 +1,7 @@
 @echo off
 
+del CbLexer.cs CbParser.cs cbc.exe
+echo Old files removed!
 gplex CbLexer.lex
 echo -------Gplex Completed, Starting Gppg-------
 gppg /gplex CbParser.y
