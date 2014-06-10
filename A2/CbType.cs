@@ -118,7 +118,7 @@ public class CbClass: CbType {
         return true;
     }
 
-    public override void Print(TextWriter p, string prefix="") {
+    public void Print(TextWriter p, string prefix="") {
         p.Write("\nclass {0}{1} : {2}", prefix, Name, Parent==null? "null" : Parent.Name);
         p.WriteLine(" {");
 
