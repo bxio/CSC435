@@ -55,16 +55,19 @@
    *                                                                       *
    ************************************************************************* */
 
+// STOCK
 Program:        UsingList ClassList
                 { Tree = AST.NonLeaf(NodeType.Program, $1.LineNumber, $1, $2); }
         ;
 
+// STOCK
 UsingList:      /* empty */
 			    { $$ = AST.Kary(NodeType.UsingList, LineNumber); }
         |       UsingList Kwd_using Identifier ';'
 			    { $1.AddChild($3);  $$ = $1; }
         ;
 
+// STOCK
 ClassList:      ClassDecl
 			    { $$ = AST.Kary(NodeType.ClassList, LineNumber); }
         |       ClassList ClassDecl
@@ -80,6 +83,7 @@ ClassDecl:      Kwd_class Identifier  '{'  DeclList  '}'
 
 // GOOD (MAYBE)
 DeclList:       /* empty */
+				{$$ = AST.Kary(NodeType.MemberList, LineNumber);}
         |       DeclList ConstDecl
 				{$$ = AST.Kary(NodeType.MemberList, LineNumber, $1, $2);}
         |       DeclList FieldDecl
@@ -102,21 +106,24 @@ InitVal:        IntConst
 				{ $$ = AST.Leaf(NodeType.StringConst, LineNumber, lexer.yytext); }
         ;
 
-
+// GOOD
 FieldDecl:      Kwd_public Type IdentList ';'
 				{ $$ = AST.NonLeaf(NodeType.Field, LineNumber, $2, $3); }
         ;
 
+// GOOD (MAYBE)
 IdentList:      IdentList ',' Identifier
 				{ $1.AddChild($3); $$ = $1; }
         |       Identifier
 				{ $$ = AST.Kary(NodeType.IdList, LineNumber); $$.AddChild($1); }
         ;
 
+// GOOD
 MethodDecl:     Kwd_public MethodAttr MethodType Identifier '(' OptFormals ')' Block
 				{ $$ = AST.NonLeaf(NodeType.Method, $4.LineNumber, $3, $4, $6, $8, $2); }
         ;
 
+// GOOD
 MethodAttr:     Kwd_static
 				{ $$ = AST.Leaf(NodeType.Static, LineNumber,lexer.yytext); }
         |       Kwd_virtual
@@ -125,47 +132,53 @@ MethodAttr:     Kwd_static
 				{ $$ = AST.Leaf(NodeType.Override, LineNumber,lexer.yytext); }		
         ;
 
-// FIXME
+// GOOD
 MethodType:     Kwd_void
-				{ $$ = AST.Leaf(NodeType.VoidType, LineNumber, "void"); }
+				{ $$ = AST.Leaf(NodeType.VoidType, LineNumber, lexer.yytext); }
         |       Type
 				{ $$ = $1; }
         ;
 
+// GOOD
 OptFormals:     /* empty */
 				{ $$ = null; }
         |       FormalPars
 				{ $$ = $1; }
         ;
 
+// GOOD
 FormalPars:     FormalDecl
-				{ $$ = $1; }
+				{ $$ = AST.Kary(NodeType.FormalList,$1.LineNumber, $1); }
         |       FormalPars ',' FormalDecl
-				{ $$ = AST.Kary(NodeType.FormalList,$1.LineNumber, $1, $2); }
+				{ $1.AddChild($3); $$ = $1; }
         ;
 
+// GOOD (Formal)
 FormalDecl:     Type Identifier
 				{ $$ = AST.NonLeaf(NodeType.Formal, LineNumber, $1, $2); }
         ;
 
+// GOOD (Array)
 Type:           TypeName
 				{ $$ = $1; }
         |       TypeName '[' ']'
 				{ $$ = AST.NonLeaf(NodeType.Array, LineNumber, $1); }
         ;
 
+// GOOD (Non-terminal)
 TypeName:       Identifier
 				{ $$ = $1; }
         |       BuiltInType
 				{ $$ = $1; }
         ;
 
+// GOOD (Built-in Types) 
 BuiltInType:    Kwd_int
-				{ $$ = $1; }
+				{ $$ = AST.Leaf(NodeType.IntType, LineNumber); }
         |       Kwd_string
-				{ $$ = $1; }
+				{ $$ = AST.Leaf(NodeType.StringType, LineNumber); }
         |       Kwd_char
-				{ $$ = $1; }
+				{ $$ = AST.Leaf(NodeType.CharType, LineNumber); }
         ;
 
 Statement:      Designator '=' Expr ';'
@@ -185,7 +198,7 @@ Statement:      Designator '=' Expr ';'
         |       Kwd_break ';'
         { $$ = AST.Leaf(NodeType.Break, LineNumber); }
         |       Kwd_return ';'
-        { $$ = AST.Kary(NodeType.Return, LineNumber); }
+        { $$ = AST.NonLeaf(NodeType.Return, LineNumber, null); }
         |       Kwd_return Expr ';'
         { $$ = AST.Kary(NodeType.Return, LineNumber); $$.AddChild($2); }
         |       Block
