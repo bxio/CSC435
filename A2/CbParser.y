@@ -77,57 +77,70 @@ ClassDecl:      Kwd_class Identifier  '{'  DeclList  '}'
                 { $$ = AST.NonLeaf(NodeType.Class, $2.LineNumber, $2, $4, $6); }
         ;
 
+// FIXME (K-ARY)
 DeclList:       /* empty */
-		//		{$$ = null;}
+				{$$ = null;}
         |       DeclList ConstDecl
-		//		{$1.AddChild($2); $$ = $1;}
+		//		{$$ = AST.Kary(NodeType.MemberList, LineNumber, $1, $2);}
         |       DeclList FieldDecl
-		//		{$1.AddChild($2); $$ = $1;}
+		//		{$$ = AST.Kary(NodeType.MemberList, LineNumber, $1, $2);}
         |       DeclList MethodDecl
-		//		{$1.AddChild($2); $$ = $1;}
+		//		{$$ = AST.Kary(NodeType.MemberList, LineNumber, $1, $2);}
         ;
+		
+		
 ConstDecl:      Kwd_public Kwd_const Type Identifier '=' InitVal ';'
 				{ $$ = AST.NonLeaf(NodeType.Class, $2.LineNumber, $3, $4, $6); }
         ;
 
-// FIXME
+// FIXME (LEAF)
 InitVal:        IntConst
-		//		{ $$ = AST.Leaf(NodeType.IntConst, $1.LineNumber, $1); }
+		//		{ $$ = AST.Leaf(NodeType.IntConst, LineNumber, (int)lexer.yytext); }
         |       CharConst
-		//		{ $$ = AST.Leaf(NodeType.IntConst, $1.LineNumber, $1); }
+		//		{ $$ = AST.Leaf(NodeType.CharConst, LineNumber, (char)lexer.yytext); }
         |       StringConst
-		//		{ $$ = AST.Leaf(NodeType.IntConst, $1.LineNumber, $1); }
+		//		{ $$ = AST.Leaf(NodeType.StringConst, LineNumber, (string)lexer.yytext); }
         ;
 
 FieldDecl:      Kwd_public Type IdentList ';'
-		//		{ $$ = AST.NonLeaf(NodeType.Field, $2.LineNumber, $2, $3); }
+				{ $$ = AST.NonLeaf(NodeType.Field, LineNumber, $2, $3); }
         ;
 
 IdentList:      IdentList ',' Identifier
 				{ $1.AddChild($3); $$ = $1; }
         |       Identifier
-        { $$ = AST.Kary(NodeType.IdList, LineNumber); $$.AddChild($1); }
+				{ $$ = AST.Kary(NodeType.IdList, LineNumber); $$.AddChild($1); }
         ;
 
 MethodDecl:     Kwd_public MethodAttr MethodType Identifier '(' OptFormals ')' Block
-				{ $$ = AST.NonLeaf(NodeType.Method, LineNumber, null, $4, $6, $8); }
+				{ $$ = AST.NonLeaf(NodeType.Method, $4.LineNumber, $2, $3, $4, $6, $8); }
         ;
 
 MethodAttr:     Kwd_static
+				{ $$ = AST.Leaf(NodeType.Static, LineNumber,lexer.yytext); }
         |       Kwd_virtual
+				{ $$ = AST.Leaf(NodeType.Virtual, LineNumber,lexer.yytext); }		
         |       Kwd_override
+				{ $$ = AST.Leaf(NodeType.Override, LineNumber,lexer.yytext); }		
         ;
 
+// FIXME
 MethodType:     Kwd_void
+		//		{ $$ = AST.Leaf(NodeType.Null, $1.LineNumber); }
         |       Type
+				{ $$ = $1; }
         ;
 
 OptFormals:     /* empty */
+				{ $$ = null; }
         |       FormalPars
+				{ $$ = $1; }
         ;
 
 FormalPars:     FormalDecl
+				{ $$ = $1; }
         |       FormalPars ',' FormalDecl
+				{ $$ = AST.Kary(NodeType.FormalList,$1.LineNumber, $1, $2); }
         ;
 
 FormalDecl:     Type Identifier
@@ -137,19 +150,25 @@ FormalDecl:     Type Identifier
 Type:           TypeName
 				{ $$ = $1; }
         |       TypeName '[' ']'
-        { $$ = AST.NonLeaf(NodeType.Array, LineNumber, $1); }
+				{ $$ = AST.NonLeaf(NodeType.Array, LineNumber, $1); }
         ;
 
 TypeName:       Identifier
+				{ $$ = $1; }
         |       BuiltInType
+				{ $$ = $1; }
         ;
 
 BuiltInType:    Kwd_int
+				{ $$ = $1; }
         |       Kwd_string
+				{ $$ = $1; }
         |       Kwd_char
+				{ $$ = $1; }
         ;
 
 Statement:      Designator '=' Expr ';'
+        { $$ = AST.NonLeaf(NodeType.Assign, LineNumber, $1, $3); }
         |       Designator '(' OptActuals ')' ';'
         { $$ = AST.NonLeaf(NodeType.Call, LineNumber, $1, $3); }
         |       Designator PLUSPLUS ';'
@@ -169,6 +188,7 @@ Statement:      Designator '=' Expr ';'
         |       Kwd_return Expr ';'
         { $$ = AST.Kary(NodeType.Return, LineNumber); $$.AddChild($2); }
         |       Block
+		{ $$ = AST.Kary(NodeType.Block, LineNumber, $1); }
         |       ';'
         ;
 
@@ -253,7 +273,8 @@ Qualifiers:     '.' Identifier Qualifiers
         |       /* empty */
         ;
 
-Identifier:     Ident   { $$ = AST.Leaf(NodeType.Ident, LineNumber, lexer.yytext); }
+Identifier:     Ident   
+				{ $$ = AST.Leaf(NodeType.Ident, LineNumber, lexer.yytext); }
         ;
 %%
 
