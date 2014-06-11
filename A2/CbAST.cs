@@ -22,7 +22,7 @@ public enum NodeType {
     And, Or, Equals, NotEquals, LessThan, GreaterThan, LessOrEqual,
     GreaterOrEqual, UnaryMinus, UnaryPlus, Index, NewArray, NewClass,
     Null, Cast, Dot, IntConst, StringConst, CharConst, Ident,
-	IntType, StingType, CharType, VoidType
+	IntType, StringType, CharType, VoidType
 };
 
 public abstract class AST {
