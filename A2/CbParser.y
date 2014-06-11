@@ -71,36 +71,37 @@ ClassList:      ClassDecl
 			    { $1.AddChild($2);  $$ = $1; }
         ;
 
+// GOOD
 ClassDecl:      Kwd_class Identifier  '{'  DeclList  '}'
                 { $$ = AST.NonLeaf(NodeType.Class, $2.LineNumber, $2, null, $4); }
         |       Kwd_class Identifier  ':' Identifier  '{'  DeclList  '}'
                 { $$ = AST.NonLeaf(NodeType.Class, $2.LineNumber, $2, $4, $6); }
         ;
 
-// FIXME (K-ARY)
+// GOOD (MAYBE)
 DeclList:       /* empty */
-				{$$ = null;}
         |       DeclList ConstDecl
-		//		{$$ = AST.Kary(NodeType.MemberList, LineNumber, $1, $2);}
+				{$$ = AST.Kary(NodeType.MemberList, LineNumber, $1, $2);}
         |       DeclList FieldDecl
-		//		{$$ = AST.Kary(NodeType.MemberList, LineNumber, $1, $2);}
+				{$$ = AST.Kary(NodeType.MemberList, LineNumber, $1, $2);}
         |       DeclList MethodDecl
-		//		{$$ = AST.Kary(NodeType.MemberList, LineNumber, $1, $2);}
+				{$$ = AST.Kary(NodeType.MemberList, LineNumber, $1, $2);}
         ;
 		
-		
+// GOOD 
 ConstDecl:      Kwd_public Kwd_const Type Identifier '=' InitVal ';'
-				{ $$ = AST.NonLeaf(NodeType.Class, $2.LineNumber, $3, $4, $6); }
+				{ $$ = AST.NonLeaf(NodeType.Const, $2.LineNumber, $3, $4, $6); }
         ;
 
-// FIXME (LEAF)
+// GOOD
 InitVal:        IntConst
-		//		{ $$ = AST.Leaf(NodeType.IntConst, LineNumber, (int)lexer.yytext); }
+				{ $$ = AST.Leaf(NodeType.IntConst, LineNumber, lexer.yytext); }
         |       CharConst
-		//		{ $$ = AST.Leaf(NodeType.CharConst, LineNumber, (char)lexer.yytext); }
+				{ $$ = AST.Leaf(NodeType.CharConst, LineNumber, lexer.yytext); }
         |       StringConst
-		//		{ $$ = AST.Leaf(NodeType.StringConst, LineNumber, (string)lexer.yytext); }
+				{ $$ = AST.Leaf(NodeType.StringConst, LineNumber, lexer.yytext); }
         ;
+
 
 FieldDecl:      Kwd_public Type IdentList ';'
 				{ $$ = AST.NonLeaf(NodeType.Field, LineNumber, $2, $3); }
@@ -113,7 +114,7 @@ IdentList:      IdentList ',' Identifier
         ;
 
 MethodDecl:     Kwd_public MethodAttr MethodType Identifier '(' OptFormals ')' Block
-				{ $$ = AST.NonLeaf(NodeType.Method, $4.LineNumber, $2, $3, $4, $6, $8); }
+				{ $$ = AST.NonLeaf(NodeType.Method, $4.LineNumber, $3, $4, $6, $8, $2); }
         ;
 
 MethodAttr:     Kwd_static
@@ -126,7 +127,7 @@ MethodAttr:     Kwd_static
 
 // FIXME
 MethodType:     Kwd_void
-		//		{ $$ = AST.Leaf(NodeType.Null, $1.LineNumber); }
+				{ $$ = AST.Leaf(NodeType.VoidType, LineNumber, "void"); }
         |       Type
 				{ $$ = $1; }
         ;
@@ -178,7 +179,7 @@ Statement:      Designator '=' Expr ';'
         |       Kwd_if '(' Expr ')' Statement Kwd_else Statement
         { $$ = AST.NonLeaf(NodeType.If, LineNumber, $3, $5, $6); }
         |       Kwd_if '(' Expr ')' Statement
-        { $$ = AST.NonLeaf(NodeType.While, LineNumber, $3, $5); }
+        { $$ = AST.NonLeaf(NodeType.If, LineNumber, $3, $5, null); }
         |       Kwd_while '(' Expr ')' Statement
         { $$ = AST.NonLeaf(NodeType.While, LineNumber, $3, $5); }
         |       Kwd_break ';'
