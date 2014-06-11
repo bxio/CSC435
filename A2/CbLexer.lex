@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 DIGIT       [0-9]
 LETTER      [a-zA-Z]
-IDCHAR      [a-zA-z0-9_]
+IDCHAR      [a-zA-Z0-9_]
 WS          [ \t\n\r]
 cChar       [^\'\\\n\r]
 sChar       [^\"\\\n\r]

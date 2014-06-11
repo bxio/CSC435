@@ -244,6 +244,7 @@ Expr:		  Expr OROR Expr
     ;
 
 UnaryExpr:      '-' Expr
+        |       '+' Expr
         |       UnaryExprNotUMinus
         ;
 
