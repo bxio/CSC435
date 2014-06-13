@@ -91,7 +91,7 @@ DeclList:       /* empty */
         |       DeclList MethodDecl
 				{$$ = AST.Kary(NodeType.MemberList, LineNumber, $1, $2);}
         ;
-		
+
 // GOOD (Const)
 ConstDecl:      Kwd_public Kwd_const Type Identifier '=' InitVal ';'
 				{ $$ = AST.NonLeaf(NodeType.Const, $2.LineNumber, $3, $4, $6); }
@@ -127,9 +127,9 @@ MethodDecl:     Kwd_public MethodAttr MethodType Identifier '(' OptFormals ')' B
 MethodAttr:     Kwd_static
 				{ $$ = AST.Leaf(NodeType.Static, LineNumber,lexer.yytext); }
         |       Kwd_virtual
-				{ $$ = AST.Leaf(NodeType.Virtual, LineNumber,lexer.yytext); }		
+				{ $$ = AST.Leaf(NodeType.Virtual, LineNumber,lexer.yytext); }
         |       Kwd_override
-				{ $$ = AST.Leaf(NodeType.Override, LineNumber,lexer.yytext); }		
+				{ $$ = AST.Leaf(NodeType.Override, LineNumber,lexer.yytext); }
         ;
 
 // GOOD (VoidType)
@@ -172,7 +172,7 @@ TypeName:       Identifier
 				{ $$ = $1; }
         ;
 
-// GOOD (Built-in Types) 
+// GOOD (Built-in Types)
 BuiltInType:    Kwd_int
 				{ $$ = AST.Leaf(NodeType.IntType, LineNumber); }
         |       Kwd_string
@@ -224,21 +224,26 @@ ActPars:        ActPars ',' Expr
 
 // FIX
 Block:          '{' DeclsAndStmts '}'
-				{$$ = AST.Kary(NodeType.Block, LineNumber);}
+				{ $$ = $2; }
         ;
 
 // FIX (LocalDecl)
 LocalDecl:      TypeName IdentList ';'
+				{ $$ = AST.NonLeaf(NodeType.LocalDecl, $1.LineNumber, $1, $2); }
         |       Identifier '[' ']' IdentList ';'
+				{ AST typehere = AST.NonLeaf(NodeType.Array, $1.LineNumber, $1);
+					$$ = AST.NonLeaf(NodeType.LocalDecl, $1.LineNumber, typehere, $4); }
         |       BuiltInType '[' ']' IdentList ';'
+				{ AST typehere = AST.NonLeaf(NodeType.Array, $1.LineNumber, $1);
+					$$ = AST.NonLeaf(NodeType.LocalDecl, $1.LineNumber, typehere, $4); }
         ;
 // FIX
 DeclsAndStmts:   /* empty */
-				{}
+				{ $$ = AST.Kary(NodeType.Block, LineNumber); }
         |       DeclsAndStmts Statement
-				{}
+				{ $1.AddChild($2); $$ = $1; }
         |       DeclsAndStmts LocalDecl
-				{}
+				{ $1.AddChild($2); $$ = $1; }
         ;
 
 // GOOD
@@ -306,7 +311,7 @@ Qualifiers:     '.' Identifier Qualifiers
         |       /* empty */
         ;
 
-Identifier:     Ident   
+Identifier:     Ident
 				{ $$ = AST.Leaf(NodeType.Ident, LineNumber, lexer.yytext); }
         ;
 %%
