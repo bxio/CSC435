@@ -302,7 +302,7 @@ UnaryExprNotUMinus:
         { $$ = $1; }
         |       StringConstant '.' Identifier // Identifier must be "Length"
         { $$ = AST.NonLeaf(NodeType.Dot, LineNumber, $1, $3); }
-        |       Kwd_new Identifier '(' OptActuals ')'
+        |       Kwd_new Identifier '(' ')'
         { $$ = AST.NonLeaf(NodeType.NewClass, LineNumber, $2); }
         |       Kwd_new TypeName '[' Expr ']'
         { $$ = AST.NonLeaf(NodeType.NewArray, LineNumber, $2, $4); }
