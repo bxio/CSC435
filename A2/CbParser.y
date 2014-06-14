@@ -219,7 +219,7 @@ OptActuals:     /* empty */
 ActPars:        ActPars ',' Expr
         { $1.AddChild($3); $$ = $1; }
         |       Expr
-        { $$ = AST.Kary(NodeType.ActualList, LineNumber, $1); $$.AddChild($1); }
+        { $$ = AST.Kary(NodeType.ActualList, LineNumber, $1); }
 
         ;
 
@@ -275,6 +275,7 @@ Expr:   Expr OROR Expr
     |   Expr '%' Expr
       { $$ = AST.NonLeaf(NodeType.Mod, LineNumber, $1, $3); }
     |       UnaryExpr
+		{$$ = $1;}
     ;
 
 // GOOD
