@@ -85,21 +85,21 @@ ClassDecl:      Kwd_class Identifier  '{'  DeclList  '}'
 DeclList:       /* empty */
         {$$ = AST.Kary(NodeType.MemberList, LineNumber);}
         |       DeclList ConstDecl
-        {$$ = AST.Kary(NodeType.MemberList, LineNumber, $1, $2);}
+        { $1.AddChild($2);  $$ = $1;}
         |       DeclList FieldDecl
-        {$$ = AST.Kary(NodeType.MemberList, LineNumber, $1, $2);}
+        { $1.AddChild($2);  $$ = $1;}
         |       DeclList MethodDecl
-        {$$ = AST.Kary(NodeType.MemberList, LineNumber, $1, $2);}
+        { $1.AddChild($2);  $$ = $1;}
         ;
 
 // GOOD (Const)
 ConstDecl:      Kwd_public Kwd_const Type Identifier '=' InitVal ';'
-        { $$ = AST.NonLeaf(NodeType.Const, $2.LineNumber, $3, $4, $6); }
+        { $$ = AST.NonLeaf(NodeType.Const, LineNumber, $3, $4, $6); }
         ;
 
 // GOOD (Multiple Const)
 InitVal:        IntConst
-        { $$ = AST.Leaf(NodeType.IntConst, LineNumber, lexer.yytext); }
+        { $$ = AST.Leaf(NodeType.IntConst, LineNumber, Convert.ToInt32(lexer.yytext)); }
         |       CharConst
         { $$ = AST.Leaf(NodeType.CharConst, LineNumber, lexer.yytext); }
         |       StringConst
@@ -294,7 +294,7 @@ UnaryExprNotUMinus:
         |       Kwd_null
         { $$ = AST.Leaf(NodeType.Null, LineNumber); }
         |       IntConst
-        { $$ = AST.Leaf(NodeType.IntConst, LineNumber, lexer.yytext); }
+        { $$ = AST.Leaf(NodeType.IntConst, LineNumber, Convert.ToInt32(lexer.yytext)); }
         |       CharConst
         { $$ = AST.Leaf(NodeType.CharConst, LineNumber, lexer.yytext); }
         |       StringConstant
