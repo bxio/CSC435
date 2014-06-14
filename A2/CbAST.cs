@@ -15,7 +15,7 @@ namespace FrontEnd {
 
 public enum NodeType {
     Program, UsingList, ClassList, Class, MemberList, Const, Field,
-    Method, IdList, FormalList, Formal,
+    Method, IdList, FormalList, Formal, Designator, Qualifiers,
     Static, Virtual, Override, Array, Block, LocalDecl,
     Assign, If, While, Break, Return, Call, ActualList,
     PlusPlus, MinusMinus, Empty, Add, Sub, Mul, Div, Mod,
