@@ -220,6 +220,7 @@ ActPars:        ActPars ',' Expr
         { $1.AddChild($3); $$ = $1; }
         |       Expr
         { $$ = AST.Kary(NodeType.ActualList, LineNumber, $1); $$.AddChild($1); }
+
         ;
 
 // TEST
@@ -337,7 +338,8 @@ Qualifiers:     '.' Identifier Qualifiers
         ;
 
 // TESTME
-Identifier:     Ident   { $$ = AST.Leaf(NodeType.Ident, LineNumber, lexer.yytext); }
+Identifier:     Ident
+        { $$ = AST.Leaf(NodeType.Ident, LineNumber, lexer.yytext); }
         ;
 
 %%
