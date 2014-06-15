@@ -69,7 +69,7 @@ UsingList:      /* empty */
 
 // STOCK (ClassList)
 ClassList:      ClassDecl
-          { $$ = AST.Kary(NodeType.ClassList, LineNumber); }
+          { $$ = AST.Kary(NodeType.ClassList, LineNumber, $1); }
         |       ClassList ClassDecl
           { $1.AddChild($2);  $$ = $1; }
         ;
@@ -323,19 +323,19 @@ StringConstant: StringConst
 
 // TESTME
 Designator:     Identifier Qualifiers
-        { $$ = AST.NonLeaf(NodeType.Designator, LineNumber, $1, $2); }
+        { $$ = repNull($2,$1); }
         ;
 
 // TESTME
 Qualifiers:     '.' Identifier Qualifiers
-        {AST DotNote = AST.NonLeaf(NodeType.Dot, LineNumber, null, $2); $3.AddChild(DotNote); $$ = $3; }
+        {AST t = AST.NonLeaf(NodeType.Dot, LineNumber, null, $2); $$ = repNull($3,t);}
         |       '[' Expr ']' Qualifiers
-        { AST indexNote = AST.NonLeaf(NodeType.Index, LineNumber, null, $2); $4.AddChild(indexNote); $$ = $4; }
+        {AST t = AST.NonLeaf(NodeType.Index, LineNumber, null, $2); $$ = repNull($4,t);}
         |       '[' ']' Qualifiers   // needed for cast syntax
         //What is this heck?
-        { AST arrayNote = AST.Leaf(NodeType.Array, LineNumber); $3.AddChild(arrayNote); $$ = $3; }
+        { AST t = AST.NonLeaf(NodeType.Array, LineNumber, null); $$ = repNull($3,t); }
         |       /* empty */
-        { $$ = AST.Kary(NodeType.Qualifiers, LineNumber); }
+        { $$ = null; }
         ;
 
 // TESTME
@@ -343,6 +343,7 @@ Identifier:     Ident
         { $$ = AST.Leaf(NodeType.Ident, LineNumber, lexer.yytext); }
         ;
 
+		
 %%
 
 // returns the AST constructed for the Cb program
@@ -370,4 +371,17 @@ public Parser( Scanner src ) : base(null) {
     Scanner = src;
 }
 
-
+private AST repNull (AST tree, AST replacement) {
+	if (tree == null) return replacement;
+	AST_nonleaf np = tree as AST_nonleaf;
+	
+	for (;;) {
+		if (np == null)
+			throw new Exception ("Error restructuring qualifiers");
+		if (np[0] == null)
+			break;
+		np = np[0] as AST_nonleaf;
+	}
+	np[0] = replacement;
+	return tree;
+}

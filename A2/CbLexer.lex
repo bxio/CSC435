@@ -51,6 +51,7 @@ opChar      [\-+<>*/%:=;,.\[\]{}()]
         keywords["if"] = Tokens.Kwd_if;
         keywords["int"] = Tokens.Kwd_int;
         keywords["new"] = Tokens.Kwd_new;
+		keywords["null"] = Tokens.Kwd_null;
         keywords["override"] = Tokens.Kwd_override;
         keywords["public"] = Tokens.Kwd_public;
         keywords["return"] = Tokens.Kwd_return;

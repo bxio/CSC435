@@ -125,14 +125,6 @@ public class CbClass: CbType {
     public void Print(TextWriter p, string prefix) {
         p.Write("\nclass {0}{1} : {2}", prefix, Name, Parent==null? "null" : Parent.Name);
         p.WriteLine(" {");
-        
-        // output the fields
-        foreach( CbMember cm in Members.Values ) {
-            CbField cf = cm as CbField;
-            if (cf == null) continue;
-            p.Write("    ");
-            cf.Print(p);
-        }
 
         // output the constants
         foreach( CbMember cm in Members.Values ) {
