@@ -36,7 +36,69 @@ Corrections  and Clarifications
 6. This continues correction #3; we need a node tag for the void type too.
    This tag is named VoidType.
 
+7. The supplied semantic action for the first production rule for ClassList
+   in CbParser.y was incorrect.
+   Instead of:
+       ClassList:  ClassDecl
+                   { $$ = AST.Kary(NodeType.ClassList, LineNumber); }
+   it should be
+       ClassList:  ClassDecl
+                   { $$ = AST.Kary(NodeType.ClassList, LineNumber, $1); }
+   The effect of the error was to cause the first class in the Cb program
+   to be omitted from the AST.
 
+8. The semantic actions needed to build the correct AST structure for a
+   Designator are a bit tricky. This is because the required AST structure
+   combines nodes in an order which does not match the grammatical structure.
+   (A mismatch which was hard to avoid without using a grammar which gives
+   trouble to the parser generator.)
+   A separate document providing help on this topic will be added to the
+   assignment 2 materials soon. For now, you can get most of the AST
+   construction working by using this semantic action in CbParser.y:
+       Designator:  Identifier Qualifiers  { $$ = $1; }
+                 ;
+   I.e., any dots or array indexing will get skipped over in the tree
+   construction. You can replace that semantic action with code that handles
+   the full case after the help document has been posted.
+
+9. The supplied code in CbTypes.cs has a minor error in the Print method
+   of the CbClass class. It outputs the names & types of fields twice.
+   Please remove the first foreach loop, so that class members are
+   displayed in the order:
+      constants, fields, methods
+
+   Note: The datatypes of those constants, fields, method results, method
+   formal parameters are left as null in Assignment 2. (That's work to be
+   done in Assignment 3.) However, you should make sure that all the Print
+   methods in the CbType.cs classes work sensibly when the type info is null.
+   Printing nothing at all for the type is what we want.
+
+10. A few people asked what the output from printing the namespace should
+   be. There is now an extra file named NameSpaceDisplay.txt in the
+   assignment materials which should help.  It might also clarify what your
+   visitor for part 2 of the assignment is supposed to do.
+
+11. If you added the obvious semantic action code to the .y code to create
+   leaf nodes for the StringConst, CharConst and IntConst tokens, you may
+   have discovered that the wrong string is being obtained from yytext.
+   Quite often, the yytext value corresponds to the token in the input which
+   comes right after the one you wanted.
+   The solution is to imitate what has been done in the .y file for the
+   Ident token. You will see that there is a rule
+         Identifier: Ident;
+   and it has a semantic action which creates an Ident AST node. Everywhere
+   the grammar previously used Ident on the RHS of a rule, it uses Identifier
+   instead.
+   Do exactly the same trick for any token which has a yytext value that you
+   need when creating its AST node. It will solve the problem 99% of the time.
+   (You will know when you've hit the unluky 1% case because you changes to
+   the grammar will have created some new shift-reduce or reduce-reduce
+   conflicts.)
+
+12. The name "null" is missing from the table of keywords in CbLexer.lex.
+   Its omission causes 'null' to be recognized as an identifier, which has
+   no major consequences for Assignment 2.
+   
 ***
 
 This list is likely to grow as questions are asked and issues are found
