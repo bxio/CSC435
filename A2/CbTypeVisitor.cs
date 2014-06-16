@@ -7,7 +7,7 @@ namespace FrontEnd{
   public class TypeVisitor : Visitor{
     private TextWriter f;
     private int indent = 0;
-
+//a class to keep track of information as we make our way through the tree.
     private class TravelInfo{
       public CbClass InClass = null;
       public CbType InsideField = null;
@@ -36,38 +36,39 @@ namespace FrontEnd{
     public override void Visit(AST_kary n, object data){
       switch (n.Tag){
         case NodeType.UsingList:{
-          //All of using list children should be identifiers
+          //All children in usinglist should be idents
           AddSystemTokens();
           break;
         }
         case NodeType.IdList:{
           TravelInfo status = (TravelInfo)(data);
           if ((status.RequestReturn == true) && (status.InsideField != null)){
-          //Since we are in a field decl, we should add all declared names
+          //Since we are in a field decl, we should add all names
             for (int i = 0; i < n.NumChildren; ++i){
               n[i].Accept(this, data);
               CbField field = new CbField(status.Ident, status.InsideField);
               status.InClass.AddMember(field);
             }
           }else{
-            SkipKary(n, data);
+            Skip(n, data);
           }
           break;
         }
         case NodeType.Formal:{
+          //formal declaration
           TravelInfo status = (TravelInfo)(data);
           if ((status.RequestReturn == true) && (status.InsideMethod != null)){
             n[0].Accept(this, data);
             CbType ParType = DetermineType(status);
             status.InsideMethod.ArgType.Add(ParType);
           }else{
-            SkipKary(n, data);
+            Skip(n, data);
           }
           break;
         }
         default:{
           //just break
-          SkipKary(n, data);
+          Skip(n, data);
           break;
         }
       }
@@ -115,7 +116,7 @@ namespace FrontEnd{
               break;
             }
             default:
-              SkipKary(n, data);
+              Skip(n, data);
             break;
           }
         }
@@ -205,26 +206,27 @@ namespace FrontEnd{
           break;
         }
         default:{
-          SkipNonleaf(n, data);
+          Skip(n, data);
           break;
         }
       }
     }
 
-    private void SkipKary(AST_kary n, object data){
-      for (int i = 0; i < n.NumChildren; ++i){
+    //Accepts (skips) the rest of the children for the given node.
+    private void Skip(AST_kary n, object data){
+      for (int i = 0; i < n.NumChildren; i++){
         if (n[i] != null) n[i].Accept(this, data);
       }
     }
 
-    private void SkipKary(AST_leaf n, object data){
-      for (int i = 0; i < n.NumChildren; ++i){
+    private void Skip(AST_leaf n, object data){
+      for (int i = 0; i < n.NumChildren; i++){
         if (n[i] != null) n[i].Accept(this, data);
       }
     }
 
-    private void SkipNonleaf(AST_nonleaf n, object data){
-      for (int i = 0; i < n.NumChildren; ++i){
+    private void Skip(AST_nonleaf n, object data){
+      for (int i = 0; i < n.NumChildren; i++){
         if (n[i] != null) n[i].Accept(this, data);
       }
     }
