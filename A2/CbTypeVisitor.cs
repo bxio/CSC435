@@ -41,13 +41,13 @@ namespace FrontEnd{
 					break;
 				}
 				case NodeType.IdList:{
-					TravelInfo statusData = (TravelInfo)(data);
-					if((statusData.RequestReturn == true) && (statusData.InsideField != null)){
+					TravelInfo statusInfo = (TravelInfo)(data);
+					if((statusInfo.RequestReturn == true) && (statusInfo.InsideField != null)){
 					//Since we are in a field decl, we should add all names
 						for (int i = 0; i < n.NumChildren; ++i){
 							n[i].Accept(this, data);
-							CbField field = new CbField(statusData.Ident, statusData.InsideField);
-							statusData.InClass.AddMember(field);
+							CbField field = new CbField(statusInfo.Ident, statusInfo.InsideField);
+							statusInfo.InClass.AddMember(field);
 						}
 					}else{
 						Skip(n, data);
@@ -56,11 +56,11 @@ namespace FrontEnd{
 				}
 				case NodeType.Formal:{
 					//formal declarations
-					TravelInfo statusData = (TravelInfo)(data);
-					if((statusData.RequestReturn == true) && (statusData.InsideMethod != null)){
+					TravelInfo statusInfo = (TravelInfo)(data);
+					if((statusInfo.RequestReturn == true) && (statusInfo.InsideMethod != null)){
 						n[0].Accept(this, data);
-						CbType ParType = DetermineType(statusData);
-						statusData.InsideMethod.ArgType.Add(ParType);
+						CbType ParType = DetermineType(statusInfo);
+						statusInfo.InsideMethod.ArgType.Add(ParType);
 					}else{
 						Skip(n, data);
 					}
@@ -76,46 +76,38 @@ namespace FrontEnd{
 
 		public override void Visit(AST_leaf n, object data){
 			if(data != null){
-				TravelInfo statusData = (TravelInfo)(data);
-				if(statusData.RequestReturn == true){
+				TravelInfo statusInfo = (TravelInfo)(data);
+				if(statusInfo.RequestReturn == true){
 					switch(n.Tag){
 						case NodeType.Ident:{
-							statusData.Ident = n.Sval;
+							statusInfo.Ident = n.Sval;
 							break;
-						}
-						case NodeType.IntType:{
-							statusData.Ident = null;
-							statusData.basicType = CbType.Int;
+						}case NodeType.IntType:{
+							statusInfo.Ident = null;
+							statusInfo.basicType = CbType.Int;
 							break;
-						}
-						case NodeType.CharType:{
-							statusData.Ident = null;
-							statusData.basicType = CbType.Char;
+						}case NodeType.CharType:{
+							statusInfo.Ident = null;
+							statusInfo.basicType = CbType.Char;
 							break;
-						}
-						case NodeType.StringType:{
-							statusData.Ident = null;
-							statusData.basicType = CbType.String;
+						}case NodeType.StringType:{
+							statusInfo.Ident = null;
+							statusInfo.basicType = CbType.String;
 							break;
-						}
-						case NodeType.VoidType:{
-							statusData.Ident = null;
-							statusData.basicType = CbType.Void;
+						}case NodeType.VoidType:{
+							statusInfo.Ident = null;
+							statusInfo.basicType = CbType.Void;
 							break;
-						}
-						case NodeType.Static:{
-							statusData.methodAttrs = TravelInfo.MethodAttrTag.Static;
+						}case NodeType.Static:{
+							statusInfo.methodAttrs = TravelInfo.MethodAttrTag.Static;
 							break;
-						}
-						case NodeType.Override:{
-							statusData.methodAttrs = TravelInfo.MethodAttrTag.Override;
+						}case NodeType.Override:{
+							statusInfo.methodAttrs = TravelInfo.MethodAttrTag.Override;
 							break;
-						}
-						case NodeType.Virtual:{
-							statusData.methodAttrs = TravelInfo.MethodAttrTag.Virtual;
+						}case NodeType.Virtual:{
+							statusInfo.methodAttrs = TravelInfo.MethodAttrTag.Virtual;
 							break;
-						}
-						default:
+						}default:
 							Skip(n, data);
 						break;
 					}
@@ -126,86 +118,83 @@ namespace FrontEnd{
 		public override void Visit(AST_nonleaf n, object data){
 			switch(n.Tag){
 				case NodeType.Class:{
-					TravelInfo statusData = new TravelInfo();
-					statusData.RequestReturn = true;
+					TravelInfo statusInfo = new TravelInfo();
+					statusInfo.RequestReturn = true;
 					String className;
 					CbClass basecls = null;
-					n[0].Accept(this, statusData);
-					className = statusData.Ident;
+					n[0].Accept(this, statusInfo);
+					className = statusInfo.Ident;
 					if(n[1] != null){
-						n[1].Accept(this, statusData);
-						basecls = (CbClass)NameSpace.TopLevelNames.LookUp(statusData.Ident);
+						n[1].Accept(this, statusInfo);
+						basecls = (CbClass)NameSpace.TopLevelNames.LookUp(statusInfo.Ident);
 					}
 					CbClass cls = new CbClass(className, basecls);
-					statusData.InClass = cls;
-					statusData.RequestReturn = false;
-					statusData.InsideField = null;
+					statusInfo.InClass = cls;
+					statusInfo.RequestReturn = false;
+					statusInfo.InsideField = null;
 					NameSpace.TopLevelNames.AddMember(cls);
 					if(n[2] != null){
-						n[2].Accept(this, statusData);
+						n[2].Accept(this, statusInfo);
 					}
 					break;
-				}
-				case NodeType.Field:{
-					TravelInfo statusData = (TravelInfo)(data);
+				}case NodeType.Field:{
+					TravelInfo statusInfo = (TravelInfo)(data);
 					//retrieve the type from TravelInfo class
-					statusData.RequestReturn = true;
-					n[0].Accept(this, statusData);
-					CbType fieldType = DetermineType(statusData);
-					statusData.InsideField = fieldType;
+					statusInfo.RequestReturn = true;
+					n[0].Accept(this, statusInfo);
+					CbType fieldType = DetermineType(statusInfo);
+					statusInfo.InsideField = fieldType;
 					//populate the members of the ident list
-					n[1].Accept(this, statusData);
-					statusData.RequestReturn = false;
-					statusData.InsideField = null;
+					n[1].Accept(this, statusInfo);
+					statusInfo.RequestReturn = false;
+					statusInfo.InsideField = null;
 					break;
-				}
-				case NodeType.Array:{
-					TravelInfo statusData = (TravelInfo)(data);
-					if(statusData.RequestReturn == true)
+				}case NodeType.Array:{
+					TravelInfo statusInfo = (TravelInfo)(data);
+					if(statusInfo.RequestReturn == true)
 					//set array flag
-					statusData.IsArray = true;
+					statusInfo.IsArray = true;
 					n[0].Accept(this, data);
 					break;
-				}
-				case NodeType.Const:{
-					TravelInfo statusData = (TravelInfo)(data);
+				}case NodeType.Const:{
+					TravelInfo statusInfo = (TravelInfo)(data);
 					//retrieve the type from TravelInfo class
-					statusData.RequestReturn = true;
-					n[0].Accept(this, statusData);
-					CbType fieldType = DetermineType(statusData);
-					statusData.InsideConst = fieldType;
+					statusInfo.RequestReturn = true;
+					n[0].Accept(this, statusInfo);
+					CbType fieldType = DetermineType(statusInfo);
+					statusInfo.InsideConst = fieldType;
 					//retrieve the identifier from TravelInfo class
-					n[1].Accept(this, statusData);
-					CbConst cons = new CbConst(statusData.Ident, fieldType);
-					statusData.InClass.AddMember(cons);
-					statusData.RequestReturn = false;
-					statusData.InsideConst = null;
+					n[1].Accept(this, statusInfo);
+					CbConst cons = new CbConst(statusInfo.Ident, fieldType);
+					statusInfo.InClass.AddMember(cons);
+					statusInfo.RequestReturn = false;
+					statusInfo.InsideConst = null;
 					break;
-				}
-				case NodeType.Method:{
-					TravelInfo statusData = (TravelInfo)(data);
+				}case NodeType.Method:{
+					TravelInfo statusInfo = (TravelInfo)(data);
 					//retrieve the method attribute
-					statusData.RequestReturn = true;
+					statusInfo.RequestReturn = true;
 					n[0].Accept(this, data);
 					//method return type
 					n[1].Accept(this, data);
-					CbType rtType = DetermineType(statusData);
+					CbType rtType = DetermineType(statusInfo);
 					//method name
 					if(n[2] != null){
 						n[2].Accept(this, data);
 					}
-					string methodname = statusData.Ident;
+
+					string methodname = statusInfo.Ident;
 					//Create then dispatch to formal list
-					CbMethod method = new CbMethod(methodname, statusData.methodAttrs == TravelInfo.MethodAttrTag.Static, rtType, new List<CbType>());
-					statusData.InsideMethod = method;
+					CbMethod method = new CbMethod(methodname, statusInfo.methodAttrs == TravelInfo.MethodAttrTag.Static, rtType, new List<CbType>());
+					statusInfo.InsideMethod = method;
 					if(n[3] != null){
 						n[3].Accept(this, data);
 					}
 
-					statusData.InClass.AddMember(method);
-					statusData.RequestReturn = false;
+					statusInfo.InClass.AddMember(method);
+					statusInfo.RequestReturn = false;
 					n[4].Accept(this, data);
-					statusData.InsideMethod = null;
+					statusInfo.InsideMethod = null;
 					break;
 				}
 				default:{
@@ -234,20 +223,21 @@ namespace FrontEnd{
 			}
 		}
 
-		private CbType DetermineType(TravelInfo statusData){
+		//grabs the type from the status data.
+		private CbType DetermineType(TravelInfo statusInfo){
 			CbType result = null;
 			//Is it an ident?
-			if(statusData.Ident == null){
-				result = statusData.basicType;
+			if(statusInfo.Ident == null){
+				result = statusInfo.basicType;
 			}else{
-				result = (CbType)NameSpace.TopLevelNames.LookUp(statusData.Ident);
-				statusData.Ident = null;
+				result = (CbType)NameSpace.TopLevelNames.LookUp(statusInfo.Ident);
+				statusInfo.Ident = null;
 			}
 			//is it an array?
-			if(statusData.IsArray == true){
+			if(statusInfo.IsArray == true){
 				CbType tmp = new CFArray(result);
 				result = tmp;
-				statusData.IsArray = false;
+				statusInfo.IsArray = false;
 			}
 			return result;
 		}
@@ -255,13 +245,13 @@ namespace FrontEnd{
 		//lots of testing required on this method
 		private void AddSystemTokens(){
 			CbMethod method = null;
-			IList<CbType> parlst = null;
+			IList<CbType> partList = null;
 			{
 				//the basic class
 				CbClass StringClass = CbType.String;
-				parlst = new List<CbType>();
-				parlst.Add(CbType.Int);
-				method = new CbMethod("Substring", false, CbType.String, parlst);
+				partList = new List<CbType>();
+				partList.Add(CbType.Int);
+				method = new CbMethod("Substring", false, CbType.String, partList);
 				StringClass.AddMember(method);
 
 				method = new CbMethod("Length", false, CbType.Int, null);
@@ -273,14 +263,14 @@ namespace FrontEnd{
 			{
 				//the console class
 				CbClass cls = new CbClass("Console", null);
-				parlst = new List<CbType>();
-				parlst.Add(CbType.String);
-				method = new CbMethod("Write", true, CbType.Void, parlst);
+				partList = new List<CbType>();
+				partList.Add(CbType.String);
+				method = new CbMethod("Write", true, CbType.Void, partList);
 				cls.AddMember(method);
 
-				parlst = new List<CbType>();
-				parlst.Add(CbType.String);
-				method = new CbMethod("WriteLine", true, CbType.Void, parlst);
+				partList = new List<CbType>();
+				partList.Add(CbType.String);
+				method = new CbMethod("WriteLine", true, CbType.Void, partList);
 				cls.AddMember(method);
 
 				method = new CbMethod("ReadLine", true, CbType.String, null);
