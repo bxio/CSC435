@@ -141,7 +141,7 @@ MethodType:     Kwd_void
 
 // GOOD (non-terminal)
 OptFormals:     /* empty */
-        { $$ = null; }
+        { $$ = AST.Kary(NodeType.FormalList, LineNumber); }
         |       FormalPars
         { $$ = $1; }
         ;
@@ -210,7 +210,7 @@ Statement:      Designator '=' Expr ';'
 
 // GOOD (non-terminal)
 OptActuals:     /* empty */
-        { $$ = null; }
+        { $$ = AST.Kary(NodeType.ActualList, LineNumber); }
         |       ActPars
         { $$ = $1; }
         ;
@@ -343,7 +343,7 @@ Identifier:     Ident
         { $$ = AST.Leaf(NodeType.Ident, LineNumber, lexer.yytext); }
         ;
 
-		
+
 %%
 
 // returns the AST constructed for the Cb program
@@ -374,7 +374,7 @@ public Parser( Scanner src ) : base(null) {
 private AST repNull (AST tree, AST replacement) {
 	if (tree == null) return replacement;
 	AST_nonleaf np = tree as AST_nonleaf;
-	
+
 	for (;;) {
 		if (np == null)
 			throw new Exception ("Error restructuring qualifiers");
