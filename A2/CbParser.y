@@ -249,31 +249,31 @@ DeclsAndStmts:   /* empty */
 
 // GOOD
 Expr:   Expr OROR Expr
-      { $$ = AST.NonLeaf(NodeType.Or, $1.LineNumber, $1, $2, $3); }
+      { $$ = AST.NonLeaf(NodeType.Or, $1.LineNumber, $1, $3); }
     |   Expr ANDAND Expr
-      { $$ = AST.NonLeaf(NodeType.And,$1.LineNumber,$1, $2, $3); }
+      { $$ = AST.NonLeaf(NodeType.And,$1.LineNumber,$1, $3); }
     |   Expr EQEQ Expr
-      { $$ = AST.NonLeaf(NodeType.Equals,$1.LineNumber,$1, $2, $3); }
+      { $$ = AST.NonLeaf(NodeType.Equals,$1.LineNumber,$1, $3); }
     |   Expr NOTEQ Expr
-      { $$ = AST.NonLeaf(NodeType.NotEquals, $1.LineNumber, $1, $2, $3); }
+      { $$ = AST.NonLeaf(NodeType.NotEquals, $1.LineNumber, $1, $3); }
     |   Expr LTEQ Expr
-      { $$ = AST.NonLeaf(NodeType.LessOrEqual, $1.LineNumber, $1, $2, $3); }
+      { $$ = AST.NonLeaf(NodeType.LessOrEqual, $1.LineNumber, $1, $3); }
     |   Expr '<' Expr
-      { $$ = AST.NonLeaf(NodeType.LessThan, $1.LineNumber, $1, $2, $3); }
+      { $$ = AST.NonLeaf(NodeType.LessThan, $1.LineNumber, $1, $3); }
     |   Expr GTEQ Expr
-      { $$ = AST.NonLeaf(NodeType.GreaterOrEqual, $1.LineNumber, $1, $2, $3); }
+      { $$ = AST.NonLeaf(NodeType.GreaterOrEqual, $1.LineNumber, $1, $3); }
     |   Expr '>' Expr
-      { $$ = AST.NonLeaf(NodeType.GreaterThan, $1.LineNumber, $1, $2, $3); }
+      { $$ = AST.NonLeaf(NodeType.GreaterThan, $1.LineNumber, $1, $3); }
     |   Expr '+' Expr
-      { $$ = AST.NonLeaf(NodeType.Add, $1.LineNumber, $1, $2, $3); }
+      { $$ = AST.NonLeaf(NodeType.Add, $1.LineNumber, $1, $3); }
     |   Expr '-' Expr
-      { $$ = AST.NonLeaf(NodeType.Sub, $1.LineNumber, $1, $2, $3); }
+      { $$ = AST.NonLeaf(NodeType.Sub, $1.LineNumber, $1, $3); }
     |   Expr '*' Expr
-      { $$ = AST.NonLeaf(NodeType.Mul, $1.LineNumber, $1, $2, $3); }
+      { $$ = AST.NonLeaf(NodeType.Mul, $1.LineNumber, $1,  $3); }
     |   Expr '/' Expr
-      { $$ = AST.NonLeaf(NodeType.Div, $1.LineNumber, $1, $2, $3); }
+      { $$ = AST.NonLeaf(NodeType.Div, $1.LineNumber, $1, $3); }
     |   Expr '%' Expr
-      { $$ = AST.NonLeaf(NodeType.Mod, $1.LineNumber, $1, $2, $3); }
+      { $$ = AST.NonLeaf(NodeType.Mod, $1.LineNumber, $1, $3); }
     |       UnaryExpr
 		{$$ = $1;}
     ;
@@ -323,18 +323,18 @@ StringConstant: StringConst
 
 // TESTME
 Designator:     Identifier Qualifiers
-        { $$ = AST.NonLeaf(NodeType.Designator, $1.LineNumber, $1, $2); }
+        { $$ = repNull($2,$1);}
         ;
 
 // TESTME
 Qualifiers:     '.' Identifier Qualifiers
-        {AST DotNote = AST.NonLeaf(NodeType.Dot, $2.LineNumber, null, $2); $3.AddChild(DotNote); $$ = $3; }
+        {AST t = AST.NonLeaf(NodeType.Dot, LineNumber, null, $2); $$ = repNull($3,t); }
         |       '[' Expr ']' Qualifiers
-        { AST indexNote = AST.NonLeaf(NodeType.Index, $2.LineNumber, null, $2); $4.AddChild(indexNote); $$ = $4; }
+        { AST t = AST.NonLeaf(NodeType.Index, LineNumber, null, $2); $$ = repNull($4,t); }
         |       '[' ']' Qualifiers   // needed for cast syntax
-        { AST arrayNote = AST.Leaf(NodeType.Array, LineNumber); $3.AddChild(arrayNote); $$ = $3; }
+        { AST t = AST.NonLeaf(NodeType.Array, LineNumber, null); $$ = repNull($3,t); }
         |       /* empty */
-        { $$ = AST.Kary(NodeType.Qualifiers, LineNumber); }
+        { $$ = null; }
         ;
 
 // TESTME
