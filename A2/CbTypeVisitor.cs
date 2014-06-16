@@ -17,8 +17,8 @@ namespace FrontEnd{
 			public string Ident = null;
 			public CbType basicType = null;
 			public bool IsArray = false;
-			public enum MethodAttrTag { None, Static, Virtual, Override };
-			public MethodAttrTag methodAttrs;
+			public enum MethodAttribute { None, Static, Virtual, Override };
+			public MethodAttribute methodAttrs;
 		}
 
 		public TypeVisitor(TextWriter output){
@@ -99,13 +99,13 @@ namespace FrontEnd{
 							statusInfo.basicType = CbType.Void;
 							break;
 						}case NodeType.Static:{
-							statusInfo.methodAttrs = TravelInfo.MethodAttrTag.Static;
+							statusInfo.methodAttrs = TravelInfo.MethodAttribute.Static;
 							break;
 						}case NodeType.Override:{
-							statusInfo.methodAttrs = TravelInfo.MethodAttrTag.Override;
+							statusInfo.methodAttrs = TravelInfo.MethodAttribute.Override;
 							break;
 						}case NodeType.Virtual:{
-							statusInfo.methodAttrs = TravelInfo.MethodAttrTag.Virtual;
+							statusInfo.methodAttrs = TravelInfo.MethodAttribute.Virtual;
 							break;
 						}default:
 							Skip(n, data);
@@ -185,7 +185,7 @@ namespace FrontEnd{
 
 					string methodname = statusInfo.Ident;
 					//Create then dispatch to formal list
-					CbMethod method = new CbMethod(methodname, statusInfo.methodAttrs == TravelInfo.MethodAttrTag.Static, rtType, new List<CbType>());
+					CbMethod method = new CbMethod(methodname, statusInfo.methodAttrs == TravelInfo.MethodAttribute.Static, rtType, new List<CbType>());
 					statusInfo.InsideMethod = method;
 					if(n[3] != null){
 						n[3].Accept(this, data);
