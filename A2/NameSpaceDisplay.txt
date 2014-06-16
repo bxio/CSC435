@@ -1,0 +1,64 @@
+
+The text below the double horizontal line shows approximately what
+the output is expected to be when the nametable is printed after the
+sample program CbExample.cs (in the Assignment 1 materials) is
+processed. Some extra blank lines have been inserted for readability.
+
+The nested namespace System is created by initialization code in
+CbType.cs.  It therefore contains datatype information for the
+methods and members in the classes defined in System.
+
+Information about the other classes and their members is inserted into
+the top-level symbol table by your visitor code for part 2 of assign-
+ment 2. It does not include datatype information for methods and
+members.
+
+Notes:
+
+1. The parent of each class is often shown as "null". That indicates no
+parent was specified in the declaration of the class.  In practice,
+every such class has 'Object' as its parent. We will fill in the
+reference to Object only in Assignment 3, though.
+
+2. The formatting of the output could be made a lot nicer. Let's not
+worry about that until the next assignment.
+
+3. The entire Cb program is contained inside a namespace whose name
+   is "" (the empty string). That should explain the first line dis-
+   played below.
+
+=======================================================================
+
+NameSpace :
+
+NameSpace System :
+
+class System.Object : null
+
+class System.String : null
+string Substring(int,int)
+Length:int
+
+class System.Console
+static void WriteLine(object)
+static void Write(object)
+static string ReadLine()
+
+class System.Int32
+static int Parse(string)
+
+class List : null
+next:
+Print()
+
+class Other : List {
+c:
+Print()
+
+class Digit : List
+d:
+Print() {
+
+class Lists : null
+static Main()
+
