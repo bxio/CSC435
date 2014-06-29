@@ -132,8 +132,9 @@ public class Start {
 
         TLVisitor tlv = new TLVisitor();
         tree.Accept(tlv, NameSpace.TopLevelNames);
-        
-
+ 
+		TCVisitor1 tc = new TCVisitor1();
+		tree.Accept(tc, NameSpace.TopLevelNames);
 
 /*      // Tasks for Assignment 3
         

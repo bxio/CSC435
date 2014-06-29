@@ -115,7 +115,7 @@ MethodAttr:     Kwd_static      { $$ = AST.Leaf(NodeType.Static, LineNumber); }
         |       Kwd_override    { $$ = AST.Leaf(NodeType.Override, LineNumber); }
         ;
 
-MethodType:     Kwd_void        { $$ = null; }
+MethodType:     Kwd_void        { $$ = AST.Leaf(NodeType.VoidType, LineNumber); }
         |       Type            { $$ = $1; }
         ;
 
