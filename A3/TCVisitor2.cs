@@ -85,7 +85,8 @@ public class TCVisitor2: Visitor {
             currentClass = null;
             break;
         case NodeType.Const:
-            node[2].Accept(this,data);  // get type of value
+			node[0].Accept(this,data); // Get type of value
+            node[2].Accept(this,data); // get assignment value
             if (!isAssignmentCompatible(node[0].Type,node[2].Type))
                 Start.SemanticError(node.LineNumber, "invalid initialization for const");
             break;
@@ -129,20 +130,22 @@ public class TCVisitor2: Visitor {
             if (!isAssignmentCompatible(node[0].Type, node[1].Type))
                 Start.SemanticError(node.LineNumber, "invalid types in assignment statement");
             break;
-        case NodeType.If:
+        case NodeType.If: // Done
             node[0].Accept(this,data);
-            /* TODO ... check type */
+			if (node[0].Type != CbType.Bool)
+				Start.SemanticError(node.LineNumber, "missing return value for method");
             node[1].Accept(this,data);
             node[2].Accept(this,data);
             break;
-        case NodeType.While:
+        case NodeType.While: // Done
             node[0].Accept(this,data);
-            /* TODO ... check type */
+			if (node[0].Type != CbType.Bool)
+				Start.SemanticError(node.LineNumber, "missing return value for method");
             loopNesting++;
             node[1].Accept(this,data);
             loopNesting--;
             break;
-        case NodeType.Return:
+        case NodeType.Return: // FIXME
             if (node[0] == null) {
                 if (currentMethod.ResultType != CbType.Void)
                     Start.SemanticError(node.LineNumber, "missing return value for method");
@@ -151,7 +154,7 @@ public class TCVisitor2: Visitor {
             node[0].Accept(this,data);
             /* TODO ... check type of method result */
             break;
-        case NodeType.Call:
+        case NodeType.Call: // FIX ME
             node[0].Accept(this,data); // method name (could be a dotted expression)
             node[1].Accept(this,data); // actual parameters
             /* TODO ... check types */
@@ -212,66 +215,164 @@ public class TCVisitor2: Visitor {
                 Start.SemanticError(node[1].LineNumber, "invalid cast");
             node.Type = node[0].Type;
             break;
-        case NodeType.NewArray:
+        case NodeType.NewArray: // FIX ME
             node[0].Accept(this,data);
             node[1].Accept(this,data);
             /* TODO ... check types */
             node.Type = CbType.Array(node[0].Type);
             break;
-        case NodeType.NewClass:
+        case NodeType.NewClass: // FIX ME
             node[0].Accept(this,data);
             /* TODO ... check that operand is a class */
             node.Type = node[0].Type;
             break;
-        case NodeType.PlusPlus:
-        case NodeType.MinusMinus:
+        case NodeType.PlusPlus: // FIX ME
+        case NodeType.MinusMinus: // FIX ME
             node[0].Accept(this,data);
             /* TODO ... check types and operand must be a variable */
             node.Type = node[0].Type;
             break;
-        case NodeType.UnaryPlus:
-        case NodeType.UnaryMinus:
+        case NodeType.UnaryPlus: // FIX ME
             node[0].Accept(this,data);
-            /* TODO ... check types */
-            node.Type = CbType.Int;
+            if (isIntegerType(node[0].Type))
+				node.Type = CbType.Int;
+			else
+			{
+				Start.SemanticError(node.LineNumber, "Incompatible type: {0}", node[0].Type);
+				node.Type = CbType.Error;
+			}		
+			break;
+        case NodeType.UnaryMinus: // FIX ME
+            node[0].Accept(this,data);
+            if (isIntegerType(node[0].Type))
+				node.Type = CbType.Int;
+			else
+			{
+				Start.SemanticError(node.LineNumber, "Incompatible type: {0}", node[0].Type);
+				node.Type = CbType.Error;
+			}
             break;
-        case NodeType.Index:
+        case NodeType.Index: // FIX ME
             node[0].Accept(this,data);
             node[1].Accept(this,data);
             /* TODO ... check types */
             node.Type = CbType.Error;  // FIX THIS
             break;
-        case NodeType.Add:
-        case NodeType.Sub:
-        case NodeType.Mul:
-        case NodeType.Div:
-        case NodeType.Mod:
+        case NodeType.Add: // done
             node[0].Accept(this,data);
-            node[1].Accept(this,data);
-            /* TODO ... check types */
-            node.Type = CbType.Error;  // FIX THIS
+            node[1].Accept(this,data);		
+			if (isIntegerType(node[0].Type) == true && isIntegerType(node[1].Type) == true)
+			{
+				node.Type = CbType.Int;
+			}
+			else if (isStringConcatType(node[0].Type, node[1].Type))
+			{
+				node.Type = CbType.String;
+			}
+			else
+			{
+				Start.SemanticError(node.LineNumber, "Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);
+				node.Type = CbType.Error;
+			}
+            break;			
+        case NodeType.Sub: // done
+            node[0].Accept(this,data);
+            node[1].Accept(this,data);		
+			if (isIntegerType(node[0].Type) != true || isIntegerType(node[1].Type) != true)
+				Start.SemanticError(node.LineNumber, "Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);
+			node.Type = CbType.Int;	
+            break;			
+        case NodeType.Mul: // done
+            node[0].Accept(this,data);
+            node[1].Accept(this,data);		
+			if (isIntegerType(node[0].Type) != true || isIntegerType(node[1].Type) != true)
+				Start.SemanticError(node.LineNumber, "Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);
+			node.Type = CbType.Int;	
+            break;			
+        case NodeType.Div: // done
+            node[0].Accept(this,data);
+            node[1].Accept(this,data);		
+			if (isIntegerType(node[0].Type) != true || isIntegerType(node[1].Type) != true)
+				Start.SemanticError(node.LineNumber, "Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);
+			node.Type = CbType.Error;		
+            break;			
+        case NodeType.Mod: // done
+            node[0].Accept(this,data);
+            node[1].Accept(this,data);		
+			if (isIntegerType(node[0].Type) != true || isIntegerType(node[1].Type) != true)
+				Start.SemanticError(node.LineNumber, "Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);
+			node.Type = CbType.Int;
             break;
-        case NodeType.Equals:
-        case NodeType.NotEquals:
+        case NodeType.Equals: // done
             node[0].Accept(this,data);
             node[1].Accept(this,data);
+			
+			if ( !(node[0].Type == node[1].Type) ) 
+			{
+				if ( !(isIntegerType(node[0].Type) && isIntegerType(node[0].Type)) )
+				{
+					Start.SemanticError(node.LineNumber, "Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);					
+				}
+			}
             node.Type = CbType.Bool;           
-            /* TODO ... check types */
-            break;
-        case NodeType.LessThan:
-        case NodeType.GreaterThan:
-        case NodeType.LessOrEqual:
-        case NodeType.GreaterOrEqual:
+            break;		
+        case NodeType.NotEquals: // done
             node[0].Accept(this,data);
             node[1].Accept(this,data);
-            node.Type = CbType.Bool;
-            /* TODO ... check types */
+			
+			if ( !(node[0].Type == node[1].Type) ) 
+			{
+				if ( !(isIntegerType(node[0].Type) && isIntegerType(node[0].Type)) )
+				{
+					Start.SemanticError(node.LineNumber, "Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);					
+				}
+			}
+            node.Type = CbType.Bool;           
             break;
-        case NodeType.And:
-        case NodeType.Or:
+        case NodeType.LessThan: // done
+            node[0].Accept(this,data);
+            node[1].Accept(this,data);		
+			if (isIntegerType(node[0].Type) != true || isIntegerType(node[1].Type) != true)
+				Start.SemanticError(node.LineNumber, "Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);
+				node.Type = CbType.Error;
+			node.Type = CbType.Bool;
+			break;
+        case NodeType.GreaterThan: // done
+            node[0].Accept(this,data);
+            node[1].Accept(this,data);		
+			if (isIntegerType(node[0].Type) != true || isIntegerType(node[1].Type) != true)
+				Start.SemanticError(node.LineNumber, "Incompatible types: {0}, {1}", node[0].Type, node[1].Type);
+			node.Type = CbType.Bool;		
+			break;
+        case NodeType.LessOrEqual: // done
+            node[0].Accept(this,data);
+            node[1].Accept(this,data);		
+			if (isIntegerType(node[0].Type) != true || isIntegerType(node[1].Type) != true)
+				Start.SemanticError(node.LineNumber, "Incompatible types: {0}, {1}", node[0].Type, node[1].Type);
+			node.Type = CbType.Bool;	
+			break;
+        case NodeType.GreaterOrEqual: // done
+            node[0].Accept(this,data);
+            node[1].Accept(this,data);		
+			if (isIntegerType(node[0].Type) != true || isIntegerType(node[1].Type) != true)
+				Start.SemanticError(node.LineNumber, "Incompatible types: {0}, {1}", node[0].Type, node[1].Type);
+			node.Type = CbType.Bool;
+            break;
+        case NodeType.And: // done
+			// Traverse children first
             node[0].Accept(this,data);
             node[1].Accept(this,data);
-            /* TODO ... check types */
+            
+			if (node[0].Type != CbType.Bool && node[1].Type != CbType.Bool)
+				Start.SemanticError(node.LineNumber, "Incompatible types: {0}, {1}", node[0].Type, node[1].Type);			
+            node.Type = CbType.Bool;		
+			break;
+        case NodeType.Or: // done
+            node[0].Accept(this,data);
+            node[1].Accept(this,data);
+            
+			if (node[0].Type != CbType.Bool && node[1].Type != CbType.Bool)
+				Start.SemanticError(node.LineNumber, "Incompatible types: {0}, {1}", node[0].Type, node[1].Type);			
             node.Type = CbType.Bool;
             break;
         default:
@@ -349,6 +450,11 @@ public class TCVisitor2: Visitor {
            contains a cycle.
            The lineNumber parameter is used in error messages.
         */
+	
+		// FIX ME
+		if ( isAncestor(CbClass.Object, c) == false)
+			Start.SemanticError(lineNumber, "Class does not have ultimate ancestor as Object.");
+		
     }
     
     private bool isAssignmentCompatible(CbType dest, CbType src) {
@@ -387,6 +493,22 @@ public class TCVisitor2: Visitor {
     private bool isIntegerType(CbType t) {
         return t == CbType.Int || t == CbType.Char || t == CbType.Error;
     }
+
+	// returns true if type t1 and t2 are compatible for string concat
+	private bool isStringConcatType(CbType t1, CbType t2) 
+	{
+		if (t1 == CbType.String)
+		{
+			if (isIntegerType(t2) || t2 == CbType.String)
+				return true;
+		}
+		else if (t2 == CbType.String)
+		{
+			if (isIntegerType(t1) || t1 == CbType.String)
+				return true;			
+		}
+		return false;
+	}
     
     // tests if T1 == T2 or T1 is an ancestor of T2 in hierarchy
     private bool isAncestor( CbClass T1, CbClass T2 ) {
