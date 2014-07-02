@@ -25,16 +25,25 @@ public enum NodeType {
     IntType, StringType, CharType, VoidType
 };
 
+public enum CbKind {
+    None, Variable, ClassName
+}
+
 public abstract class AST {
 
     public AST( NodeType tag, int ln ) {
         this.Tag = tag;
         LineNumber = ln;
+        Kind = CbKind.None;
     }
 
     // The datatype of the subtree -- note: statements and other constructs
     // without values will leave the value of Type as null
     public CbType Type { get; set; }
+    
+    // Additional information about the subtree sometimes needed for checking
+    // purposes.
+    public CbKind Kind { get; set; }
 
     public int LineNumber {  get; protected set; }
 
@@ -142,9 +151,8 @@ public class AST_nonleaf : AST {
         if (children==null) {
             this.children = new AST[1];
             this.children[0] = null;
-        } else {
+        } else
             this.children = children;
-		}
     }
 
     public override int NumChildren { get{ return children.Length; } }
