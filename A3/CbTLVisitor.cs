@@ -84,12 +84,12 @@ public class TLVisitor: Visitor {
             string parentName = parentClassId == null? null : parentClassId.Sval;
             AST_kary memberList = node[2] as AST_kary;
             object ctd = ns.LookUp(className);
-            Debug.Assert(ctd is CbClass);
+            //Debug.Assert(ctd is CbClass);
             CbClass classTypeDefn = (CbClass)ctd;
             CbClass parentTypeDefn = null;
             if (parentName != null) {
                 object ptd = ns.LookUp(parentName);
-                Debug.Assert(ptd is CbClass);
+                //Debug.Assert(ptd is CbClass);
                 parentTypeDefn = (CbClass)ptd;
                 if (parentTypeDefn == null) {
                     pendingClassDefns[parentName] = node;
