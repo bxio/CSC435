@@ -37,9 +37,9 @@ public class TCVisitor2: Visitor {
 
 
 
-    public void complain(int line_number, string message) {
+    /*public void complain(int line_number, string message) {
       System.Console.WriteLine("Error["+line_number+"]: "+message);
-    }
+    }*/
 
     // Note: the data parameter for the Visit methods is never used
     // It is always null (or whatever is passed on the initial call)
@@ -160,65 +160,63 @@ public class TCVisitor2: Visitor {
         case NodeType.Return: // CHECK ME, DONE?
             if (node[0] == null) {
                 if (currentMethod.ResultType != CbType.Void){
-                  Start.SemanticError(node.LineNumber, "missing return value for method");
+                  Start.SemanticError(node.LineNumber, "missing return value for method :'(");
                 }
                 break;
             }
             node[0].Accept(this,data);
 
-      // Check if current type of value == method type
-            if (node[0].Type != currentMethod.ResultType)
-      {
-        // if not, check if the return value is compatible w/ return type
-        if ( !isAssignmentCompatible(currentMethod.ResultType, node[0].Type) )
-        {
-          Start.SemanticError(node.LineNumber, String.Format("expected return type of {0} but got type of {1} instead.",currentMethod.ResultType.ToString(),node[0].Type.ToString()));
-          node.Type = CbType.Error;
-          break;
-        }
+            // Check if current type of value == method type
+            if (node[0].Type != currentMethod.ResultType){
+              // if not, check if the return value is compatible w/ return type
+              if ( !isAssignmentCompatible(currentMethod.ResultType, node[0].Type) ){
+                Start.SemanticError(node.LineNumber, String.Format("expected return type of {0} but got type of {1} instead.",currentMethod.ResultType.ToString(),node[0].Type.ToString()));
+                node.Type = CbType.Error;
+                break;
+              }
             }
-
-      node.Type = node[0].Type;
+            node.Type = node[0].Type;
             break;
         case NodeType.Call: // CHECK ME, DONE?
             node[0].Accept(this,data); // method name (could be a dotted expression)
             node[1].Accept(this,data); // actual parameters
             /* TODO ... check types */
 
-      // Look up method in symbol table
-      SymTabEntry symbol = sy.LookUp(((AST_leaf)node[0][1]).Sval);
+            // Look up method in symbol table
+            SymTabEntry symbol = sy.LookUp(((AST_leaf)node[0][1]).Sval);
             if (symbol == null) {
-              complain(node.LineNumber,"unknown method name'"+((AST_leaf)node[0][1]).Sval+"'");
+              System.Console.WriteLine("In line 191.");
+             //complain(node.LineNumber,"unknown method name'"+((AST_leaf)node[0][1]).Sval+"'");
               node.Type = CbType.Error;
               break;
             }
 
             // Check call has same number of parameters as method definition
-      AST_kary meth_params = (AST_kary)node[1];
-      CbMethodType tMeth = symbol.Type as CbMethodType;
-      if (meth_params.NumChildren != tMeth.Method.ArgType.Count)
-      {
-        Start.SemanticError(node.LineNumber,"Number of arguments does not match the number in the method definition.");
-        node.Type = CbType.Error;
-        break;
-      }
+            AST_kary meth_params = (AST_kary)node[1];
+            CbMethodType tMeth = symbol.Type as CbMethodType;
+            if (meth_params.NumChildren != tMeth.Method.ArgType.Count)
+            {
+              Start.SemanticError(node.LineNumber,"Number of arguments does not match the number in the method definition.");
+              node.Type = CbType.Error;
+              break;
+            }
 
-      // Compare types
-      int incompatType = 0;
-      for (int i=0; i<meth_params.NumChildren; i++)
-      {
-        if ( isAssignmentCompatible(meth_params[i].Type, tMeth.Method.ArgType[i]) == false)
-          incompatType = 1;
-      }
+            // Compare types
+            int incompatType = 0;
+            for (int i=0; i<meth_params.NumChildren; i++)
+            {
+              if ( isAssignmentCompatible(meth_params[i].Type, tMeth.Method.ArgType[i]) == false)
+                incompatType = 1;
+            }
 
-      // Output error msg for incompatible types
-      if (incompatType != 0)
-      {
-        Start.SemanticError(node.LineNumber,"Call arguments have incompatible types.");
-        node.Type = CbType.Error;
-        break;
-      }
-      node.Type = tMeth.Method.ResultType;
+            // Output error msg for incompatible types
+            if (incompatType != 0)
+            {
+              Start.SemanticError(node.LineNumber,"Call arguments have incompatible types.");
+              node.Type = CbType.Error;
+              break;
+            }
+            node.Type = tMeth.Method.ResultType;
             break;
         case NodeType.Dot:
             node[0].Accept(this,data);
