@@ -1,17 +1,17 @@
 /*  CbType.cs
 
     Classes and types to describe the datatypes used in a Cb program
-    
+
     Author: Nigel Horspool
-    
+
     Dates: 2012-2014
-    
+
     [26 June] Additions/Changes:
     *   enum value: CbBasicType.Null
     *   static member: CbType.Null
     *   class: CbMethodType
     *   and some recoding of CbMethod to provide a Type property
-        
+
 */
 
 using System;
@@ -64,7 +64,7 @@ public abstract class CbType {
     public static void Initialize() {
         NameSpace system = (NameSpace)NameSpace.TopLevelNames.LookUp("System");
         system.AddMember(CbType.Object);
-        
+
         // Provide String class with String.Substring and String.Length members
         CbClass st = CbType.String;
         CbMethod sub = new CbMethod("Substring", false, st, new List<CbType> { CbType.Int, CbType.Int });
@@ -78,7 +78,7 @@ public abstract class CbType {
         con.AddMember(new CbMethod("Write", true, CbType.Void, new List<CbType> { CbType.Object }));
         con.AddMember(new CbMethod("ReadLine", true, CbType.String, new List<CbType> { }));
         system.AddMember(con);
-        
+
         CbClass i32 = new CbClass("Int32", null);
         i32.AddMember(new CbMethod("Parse", true, CbType.Int, new List<CbType> {st}));
         system.AddMember(i32);
@@ -96,7 +96,7 @@ public class CFArray: CbType {
     public override string ToString() {
         return System.String.Format("{0}[]", ElementType);
     }
-    
+
     public override void Print(TextWriter p) {
         p.Write(this.ToString());
     }
@@ -128,6 +128,15 @@ public class CbClass: CbType {
         return true;
     }
 
+    public CbMember FindMember( string name ) {
+      if (!Members.ContainsKey(name)) return null; //FAIL -- no such member exists
+      foreach(CbMember cm in Members.Values) {
+        if( string.Compare(cm.Name, name) == 0){
+          return cm;
+        }
+      }
+      return null; //FAIL -- no such member exists (this code should never be reached)
+    }
     public override void Print(TextWriter p) {
         Print(p, "");
     }
@@ -166,12 +175,12 @@ public class CbClass: CbType {
 
 // A wrapper for a CbMethod value
 public class CbMethodType : CbType {
-    public CbMethod Method{ get; protected set; } 
-    
+    public CbMethod Method{ get; protected set; }
+
     public CbMethodType( CbMethod method ) {
         Method = method;
     }
-    
+
     public override string ToString() {
         return Method.ToString();
     }
@@ -183,12 +192,12 @@ public class CbMethodType : CbType {
 
 // A wrapper for a NameSpace
 public class CbNameSpaceContext : CbType {
-    public NameSpace Space{ get; protected set; } 
-    
+    public NameSpace Space{ get; protected set; }
+
     public CbNameSpaceContext( NameSpace space ) {
         Space = space;
     }
-    
+
     public override string ToString() {
         return "namespace " + Space.Name;
     }
