@@ -515,113 +515,116 @@ public class TCVisitor2: Visitor {
 		}
 
 	public override void Visit(AST_leaf node, object data){
-				switch(node.Tag){
-				case NodeType.Ident:
-						string name = node.Sval;
-						SymTabEntry local = sy.LookUp(name);
-						if(local != null){
-								node.Type = local.Type;
-								node.Kind = CbKind.Variable;
-								return;
-						}
-						CbMember mem;
-						if(currentClass.Members.TryGetValue(name,out mem)){
-								node.Type = mem.Type;
-								if(mem is CbField)
-										node.Kind = CbKind.Variable;
-								break;
-						}
-						CbClass t = ns.LookUp(name) as CbClass;
-						if(t != null){
-								node.Type = t;
-								node.Kind = CbKind.ClassName;
-								break;
-						}
-						NameSpace lhsns = ns.LookUp(name) as NameSpace;
-						if(lhsns != null){
-								node.Type = new CbNameSpaceContext(lhsns);
-								break;
-						}
-						node.Type = CbType.Error;;
-						Start.SemanticError(node.LineNumber, "{0} is unknown", name);
-						break;
-				case NodeType.Break:
-						if(loopNesting <= 0)
-								Start.SemanticError(node.LineNumber, "break can only be used inside a loop");
-						break;
-				case NodeType.Null:
-						node.Type = CbType.Null;
-						break;
-				case NodeType.IntConst:
-						node.Type = CbType.Int;
-						break;
-				case NodeType.StringConst:
-						node.Type = CbType.String;
-						break;
-				case NodeType.CharConst:
-						node.Type = CbType.Char;
-						break;
-				case NodeType.Empty:
-						break;
-				case NodeType.IntType:
-						node.Type = CbType.Int;
-						break;
-				case NodeType.CharType:
-						node.Type = CbType.Char;
-						break;
-				case NodeType.StringType:
-						node.Type = CbType.String;
-						break;
-				default:
-						throw new Exception("Unexpected tag: "+node.Tag);
+			switch(node.Tag){
+			case NodeType.Ident:
+				string name = node.Sval;
+				SymTabEntry local = sy.LookUp(name);
+				if(local != null){
+						node.Type = local.Type;
+						node.Kind = CbKind.Variable;
+						return;
 				}
+				CbMember mem;
+				if(currentClass.Members.TryGetValue(name,out mem)){
+						node.Type = mem.Type;
+						if(mem is CbField)
+								node.Kind = CbKind.Variable;
+						break;
+				}
+				CbClass t = ns.LookUp(name) as CbClass;
+				if(t != null){
+						node.Type = t;
+						node.Kind = CbKind.ClassName;
+						break;
+				}
+				NameSpace lhsns = ns.LookUp(name) as NameSpace;
+				if(lhsns != null){
+						node.Type = new CbNameSpaceContext(lhsns);
+						break;
+				}
+				node.Type = CbType.Error;;
+				Start.SemanticError(node.LineNumber, "{0} is unknown", name);
+			break;
+
+			case NodeType.Break:
+				if(loopNesting <= 0){
+					Start.SemanticError(node.LineNumber, "break can only be used inside a loop");
+				}
+			break;
+
+			case NodeType.Null:
+				node.Type = CbType.Null;
+			break;
+			case NodeType.IntConst:
+				node.Type = CbType.Int;
+			break;
+			case NodeType.StringConst:
+				node.Type = CbType.String;
+			break;
+			case NodeType.CharConst:
+				node.Type = CbType.Char;
+			break;
+			case NodeType.Empty:
+			break;
+			case NodeType.IntType:
+				node.Type = CbType.Int;
+			break;
+			case NodeType.CharType:
+				node.Type = CbType.Char;
+			break;
+			case NodeType.StringType:
+				node.Type = CbType.String;
+			break;
+			default:
+				throw new Exception("Unexpected tag: "+node.Tag);
+			}
 		}
 
 		private void performParentCheck(CbClass c, int lineNumber){//Definately CHECK ME
-				/* TODO
-					 code to check that c's ultimate ancestor is Object.
-					 Be careful not to get stuck if the parent relationship
-					 contains a cycle.
-					 The lineNumber parameter is used in error messages.
-				*/
-				List<CbClass> InheritingPath = new List<CbClass>();
-				CbClass ptr = c;
-				do{
-					InheritingPath.Add(ptr);
-					ptr = ptr.Parent;
-					if(ptr == CbType.Object){
-						//success
+			/* TODO
+				 code to check that c's ultimate ancestor is Object.
+				 Be careful not to get stuck if the parent relationship
+				 contains a cycle.
+				 The lineNumber parameter is used in error messages.
+			*/
+			List<CbClass> InheritingPath = new List<CbClass>();
+			CbClass ptr = c;
+			do{
+				InheritingPath.Add(ptr);
+				ptr = ptr.Parent;
+				if(ptr == CbType.Object){
+					//success
+					break;
+				}
+
+				if(ptr == null){
+					//fail
+					Start.SemanticError(lineNumber, "Class inheriting path broken.");
+					break;
+				}
+
+				foreach (CbClass ancestor in InheritingPath){
+					if(ptr == ancestor){
+						Start.SemanticError(lineNumber, "Circular inheritance detected.");
 						break;
 					}
-
-					if(ptr == null){
-						//fail
-						Start.SemanticError(lineNumber, "Class inheriting path broken.");
-						break;
-					}
-
-					foreach (CbClass ancestor in InheritingPath){
-						if(ptr == ancestor){
-							Start.SemanticError(lineNumber, "Circular inheritance detected.");
-							break;
-						}
-					}
-				}while(true);
-			}
+				}
+			}while(true);
+		}
 
 
 		private bool isAssignmentCompatible(CbType dest, CbType src){
-				if(dest == CbType.Error || src == CbType.Error) return true;
-				if(dest == src) return true;
-				if(dest == CbType.Int) return isIntegerType(src);
-				CbClass d = dest as CbClass;
-				CbClass s = src as CbClass;
-				if(d != null){
-						if(src == CbType.Null) return true;
-						if(s == null) return false;
-						if(isAncestor(d,s)) return true;
-				}
-				return false;
+			if(dest == CbType.Error || src == CbType.Error) return true;
+			if(dest == src) return true;
+			if(dest == CbType.Int) return isIntegerType(src);
+			CbClass d = dest as CbClass;
+			CbClass s = src as CbClass;
+			if(d != null){
+					if(src == CbType.Null) return true;
+					if(s == null) return false;
+					if(isAncestor(d,s)) return true;
+			}
+			return false;
 		}
 
 		private void checkTypeSyntax(AST n){
@@ -630,52 +633,48 @@ public class TCVisitor2: Visitor {
 				 structure for a Cb type. It could be a builtin type (int, char,
 				 string), a class, or an array whose elements have a valid type.
 			*/
-		switch(n.Tag)
-		{
-		case NodeType.IntType:
-			break;
-		case NodeType.CharType:
-			break;
-		case NodeType.StringType:
-			break;
-		case NodeType.Ident:
-			String name = ((AST_leaf)n).Sval;
-			CbClass t = ns.LookUp(name) as CbClass;
-			if(t == null){
+			switch(n.Tag){
+			case NodeType.IntType:
+				break;
+			case NodeType.CharType:
+				break;
+			case NodeType.StringType:
+				break;
+			case NodeType.Ident:
+				String name = ((AST_leaf)n).Sval;
+				CbClass t = ns.LookUp(name) as CbClass;
+				if(t == null){
+					Start.SemanticError(n.LineNumber, "Invalid Type");
+				}
+				break;
+			default:
 				Start.SemanticError(n.LineNumber, "Invalid Type");
+				break;
 			}
-			break;
-		default:
-			Start.SemanticError(n.LineNumber, "Invalid Type");
-			break;
-		}
 		}
 
 		private bool isCastable(CbType dest, CbType src){
-				if(isIntegerType(dest) && isIntegerType(src)) return true;
-				if(dest == CbType.Error || src == CbType.Error) return true;
-				CbClass d = dest as CbClass;
-				CbClass s = src as CbClass;
-				if(isAncestor(d,s)) return true;
-				if(isAncestor(s,d)) return true;
-				return false;
+			if(isIntegerType(dest) && isIntegerType(src)) return true;
+			if(dest == CbType.Error || src == CbType.Error) return true;
+			CbClass d = dest as CbClass;
+			CbClass s = src as CbClass;
+			if(isAncestor(d,s)) return true;
+			if(isAncestor(s,d)) return true;
+			return false;
 		}
 
 		// returns true if type t can be used where an integer is needed
 		private bool isIntegerType(CbType t){
-				return t == CbType.Int || t == CbType.Char || t == CbType.Error;
+			return t == CbType.Int || t == CbType.Char || t == CbType.Error;
 		}
 
 	// returns true if type t1 and t2 are compatible for string concat
-	private bool isStringConcatType(CbType t1, CbType t2)
-	{
-		if(t1 == CbType.String)
-		{
+	private bool isStringConcatType(CbType t1, CbType t2){
+		if(t1 == CbType.String){
 			if(isIntegerType(t2) || t2 == CbType.String)
 				return true;
 		}
-		else if(t2 == CbType.String)
-		{
+		else if(t2 == CbType.String){
 			if(isIntegerType(t1) || t1 == CbType.String)
 				return true;
 		}
@@ -684,11 +683,11 @@ public class TCVisitor2: Visitor {
 
 		// tests if T1 == T2 or T1 is an ancestor of T2 in hierarchy
 		private bool isAncestor( CbClass T1, CbClass T2 ){
-				while(T1 != T2){
-						T2 = T2.Parent;
-						if(T2 == null) return false;
-				}
-				return true;
+			while(T1 != T2){
+					T2 = T2.Parent;
+					if(T2 == null) return false;
+			}
+			return true;
 		}
 
 		private void checkOverride(AST_nonleaf node){
