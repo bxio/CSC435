@@ -188,90 +188,90 @@ public class TCVisitor2: Visitor {
 					}
 					node.Type = node[0].Type;
 				break;
+
 				case NodeType.Call: // CHECK ME, DONE?
-						node[0].Accept(this,data); // method name (could be a dotted expression)
-						node[1].Accept(this,data); // actual parameters
-						/* TODO ... check types */
+					node[0].Accept(this,data); // method name (could be a dotted expression)
+					node[1].Accept(this,data); // actual parameters
+					/* TODO ... check types */
 
-						// Look up method in symbol table
-						SymTabEntry symbol = sy.LookUp(((AST_leaf)node[0][1]).Sval);
-						if(symbol == null){
-						 //complain(node.LineNumber,"unknown method name'"+((AST_leaf)node[0][1]).Sval+"'");
-							node.Type = CbType.Error;
-							break;
-						}
-
-						// Check call has same number of parameters as method definition
-						AST_kary meth_params = (AST_kary)node[1];
-						CbMethodType tMeth = symbol.Type as CbMethodType;
-						if(meth_params.NumChildren != tMeth.Method.ArgType.Count)
-						{
-							Start.SemanticError(node.LineNumber,"Number of arguments does not match the number in the method definition.");
-							node.Type = CbType.Error;
-							break;
-						}
-
-						// Compare types
-						int incompatType = 0;
-						for (int i=0; i<meth_params.NumChildren; i++)
-						{
-							if( isAssignmentCompatible(meth_params[i].Type, tMeth.Method.ArgType[i]) == false)
-								incompatType = 1;
-						}
-
-						// Output error msg for incompatible types
-						if(incompatType != 0)
-						{
-							Start.SemanticError(node.LineNumber,"Call arguments have incompatible types.");
-							node.Type = CbType.Error;
-							break;
-						}
-						node.Type = tMeth.Method.ResultType;
+					// Look up method in symbol table
+					SymTabEntry symbol = sy.LookUp(((AST_leaf)node[0][1]).Sval);
+					if(symbol == null){
+					 //complain(node.LineNumber,"unknown method name'"+((AST_leaf)node[0][1]).Sval+"'");
+						node.Type = CbType.Error;
 						break;
+					}
+
+					// Check call has same number of parameters as method definition
+					AST_kary meth_params = (AST_kary)node[1];
+					CbMethodType tMeth = symbol.Type as CbMethodType;
+					if(meth_params.NumChildren != tMeth.Method.ArgType.Count){
+						Start.SemanticError(node.LineNumber,"Number of arguments does not match the number in the method definition.");
+						node.Type = CbType.Error;
+						break;
+					}
+
+					// Compare types
+					int incompatType = 0;
+					for (int i=0; i<meth_params.NumChildren; i++){
+						if( isAssignmentCompatible(meth_params[i].Type, tMeth.Method.ArgType[i]) == false)
+							incompatType = 1;
+					}
+
+					// Output error msg for incompatible types
+					if(incompatType != 0){
+						Start.SemanticError(node.LineNumber,"Call arguments have incompatible types.");
+						node.Type = CbType.Error;
+						break;
+					}
+					node.Type = tMeth.Method.ResultType;
+				break;
+
 				case NodeType.Dot:
 					node[0].Accept(this,data);
 					string rhs = ((AST_leaf)node[1]).Sval;
 					CbClass lhstype = node[0].Type as CbClass;
 					if(lhstype != null){
-							// rhs needs to be a member of the lhs class
-							CbMember mem;
-							if(lhstype.Members.TryGetValue(rhs,out mem)){
-									node.Type = mem.Type;
-									if(mem is CbField)
-											node.Kind = CbKind.Variable;
-									if(node[0].Kind == CbKind.ClassName){
-										// mem has to be a static member
-										if(!mem.IsStatic){
-											Start.SemanticError(node[1].LineNumber, "static member required");
-										}
-									}else{
-										// mem has to be an instance member
-										if(mem.IsStatic){
-											Start.SemanticError(node[1].LineNumber, "member cannot be accessed via a reference, use classname instead");
-										}
+						// rhs needs to be a member of the lhs class
+						CbMember mem;
+						if(lhstype.Members.TryGetValue(rhs,out mem)){
+							node.Type = mem.Type;
+							if(mem is CbField){
+								node.Kind = CbKind.Variable;
+							}
+							if(node[0].Kind == CbKind.ClassName){
+								// mem has to be a static member
+								if(!mem.IsStatic){
+									Start.SemanticError(node[1].LineNumber, "static member required");
+								}
+							}else{
+								// mem has to be an instance member
+								if(mem.IsStatic){
+									Start.SemanticError(node[1].LineNumber, "member cannot be accessed via a reference, use classname instead");
 									}
+								}
 							}else{
 								Start.SemanticError(node[1].LineNumber, "member {0} not found in class {1}", rhs, lhstype.Name);
 								node.Type = CbType.Error;
 							}
-							break;
+						break;
 					}
 
 					if(rhs == "Length"){
-							// lhs has to be an array or a string
-							if(node[0].Type != CbType.String && !(node[0].Type is CFArray))
-									Start.SemanticError(node[1].LineNumber, "member Length not found");
-							node.Type = CbType.Int;
-							break;
+						// lhs has to be an array or a string
+						if(node[0].Type != CbType.String && !(node[0].Type is CFArray))
+								Start.SemanticError(node[1].LineNumber, "member Length not found");
+						node.Type = CbType.Int;
+						break;
 					}
 					CbNameSpaceContext lhsns = node[0].Type as CbNameSpaceContext;
 					if(lhsns != null){
-							lhstype = lhsns.Space.LookUp(rhs) as CbClass;
-							if(lhstype != null){
-									node.Type = lhstype;
-									node.Kind = CbKind.ClassName;
-									break;
-							}
+						lhstype = lhsns.Space.LookUp(rhs) as CbClass;
+						if(lhstype != null){
+							node.Type = lhstype;
+							node.Kind = CbKind.ClassName;
+							break;
+						}
 					}
 					Start.SemanticError(node[1].LineNumber, "member {0} does not exist", rhs);
 					node.Type = CbType.Error;
@@ -281,8 +281,9 @@ public class TCVisitor2: Visitor {
 					checkTypeSyntax(node[0]);
 					node[0].Accept(this,data);
 					node[1].Accept(this,data);
-					if(!isCastable(node[0].Type, node[1].Type))
-							Start.SemanticError(node[1].LineNumber, "invalid cast");
+					if(!isCastable(node[0].Type, node[1].Type)){
+						Start.SemanticError(node[1].LineNumber, "invalid cast");
+					}
 					node.Type = node[0].Type;
 				break;
 
@@ -413,105 +414,104 @@ public class TCVisitor2: Visitor {
 				break;
 
 				case NodeType.Equals: // done
-						node[0].Accept(this,data);
-						node[1].Accept(this,data);
+					node[0].Accept(this,data);
+					node[1].Accept(this,data);
 
-			if( !(node[0].Type == node[1].Type) )
-			{
-				if( !(isIntegerType(node[0].Type) && isIntegerType(node[0].Type)) )
-				{
-				Start.SemanticError(node.LineNumber, "EQUALS: Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);
-				}
-			}
-			break;
+					if( !(node[0].Type == node[1].Type) ){
+						if( !(isIntegerType(node[0].Type) && isIntegerType(node[0].Type)) )
+						{
+						Start.SemanticError(node.LineNumber, "EQUALS: Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);
+						}
+					}
+				node.Type = CbType.Bool;
+				break;
 
-			node.Type = CbType.Bool;
 				case NodeType.NotEquals: // done
 					node[0].Accept(this,data);
 					node[1].Accept(this,data);
 
-			if( !(node[0].Type == node[1].Type) )
-			{
-				if( !(isIntegerType(node[0].Type) && isIntegerType(node[0].Type)) )
-				{
-				Start.SemanticError(node.LineNumber, "NOTEQUALS: Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);
-				}
-			}
-			node.Type = CbType.Bool;
-						break;
+					if( !(node[0].Type == node[1].Type) ){
+						if( !(isIntegerType(node[0].Type) && isIntegerType(node[0].Type)) ){
+							Start.SemanticError(node.LineNumber, "NOTEQUALS: Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);
+						}
+					}
+					node.Type = CbType.Bool;
+				break;
+
 				case NodeType.LessThan: // done
-						node[0].Accept(this,data);
-						node[1].Accept(this,data);
-			if(isIntegerType(node[0].Type) != true || isIntegerType(node[1].Type) != true)
-			{
-				Start.SemanticError(node.LineNumber, "LESSTHAN: Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);
-				node.Type = CbType.Error;
+					node[0].Accept(this,data);
+					node[1].Accept(this,data);
+					if(isIntegerType(node[0].Type) != true || isIntegerType(node[1].Type) != true){
+						Start.SemanticError(node.LineNumber, "LESSTHAN: Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);
+						node.Type = CbType.Error;
+						break;
+					}
+					node.Type = CbType.Bool;
 				break;
-			}
-			node.Type = CbType.Bool;
-			break;
+
 				case NodeType.GreaterThan: // done
-						node[0].Accept(this,data);
-						node[1].Accept(this,data);
-			if(isIntegerType(node[0].Type) != true || isIntegerType(node[1].Type) != true)
-			{
-				Start.SemanticError(node.LineNumber, "GREATERTHAN: Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);
-				node.Type = CbType.Error;
+					node[0].Accept(this,data);
+					node[1].Accept(this,data);
+					if(isIntegerType(node[0].Type) != true || isIntegerType(node[1].Type) != true)
+					{
+						Start.SemanticError(node.LineNumber, "GREATERTHAN: Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);
+						node.Type = CbType.Error;
+						break;
+					}
+					node.Type = CbType.Bool;
 				break;
-			}
-			node.Type = CbType.Bool;
-			break;
+
 				case NodeType.LessOrEqual: // done
-						node[0].Accept(this,data);
-						node[1].Accept(this,data);
-			if(isIntegerType(node[0].Type) != true || isIntegerType(node[1].Type) != true)
-			{
-				Start.SemanticError(node.LineNumber, "LESSOREQUAL: Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);
-				node.Type = CbType.Error;
+					node[0].Accept(this,data);
+					node[1].Accept(this,data);
+					if(isIntegerType(node[0].Type) != true || isIntegerType(node[1].Type) != true){
+						Start.SemanticError(node.LineNumber, "LESSOREQUAL: Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);
+						node.Type = CbType.Error;
+						break;
+					}
+					node.Type = CbType.Bool;
 				break;
-			}
-			node.Type = CbType.Bool;
-			break;
 				case NodeType.GreaterOrEqual: // done
-						node[0].Accept(this,data);
-						node[1].Accept(this,data);
-			if(isIntegerType(node[0].Type) != true || isIntegerType(node[1].Type) != true)
-			{
-				Start.SemanticError(node.LineNumber, "GREATEROREQUAL: Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);
-				node.Type = CbType.Error;
+					node[0].Accept(this,data);
+					node[1].Accept(this,data);
+					if(isIntegerType(node[0].Type) != true || isIntegerType(node[1].Type) != true){
+						Start.SemanticError(node.LineNumber, "GREATEROREQUAL: Incompatible types for: {0}, {1}", node[0].Type, node[1].Type);
+						node.Type = CbType.Error;
+						break;
+					}
+					node.Type = CbType.Bool;
 				break;
-			}
-			node.Type = CbType.Bool;
-			break;
+
 				case NodeType.And: // done
-			// Traverse children first
-						node[0].Accept(this,data);
-						node[1].Accept(this,data);
+					// Traverse children first
+					node[0].Accept(this,data);
+					node[1].Accept(this,data);
 
-			if(node[0].Type != CbType.Bool && node[1].Type != CbType.Bool)
-			{
-				Start.SemanticError(node.LineNumber, "ANDAND: Incompatible types: {0}, {1}", node[0].Type, node[1].Type);
-				node.Type = CbType.Error;
+					if(node[0].Type != CbType.Bool && node[1].Type != CbType.Bool)
+					{
+						Start.SemanticError(node.LineNumber, "ANDAND: Incompatible types: {0}, {1}", node[0].Type, node[1].Type);
+						node.Type = CbType.Error;
+						break;
+					}
+					node.Type = CbType.Bool;
 				break;
-			}
-			node.Type = CbType.Bool;
-			break;
+
 				case NodeType.Or: // done
-			// Traverse children first
+					// Traverse children first
 						node[0].Accept(this,data);
 						node[1].Accept(this,data);
 
-			if(node[0].Type != CbType.Bool && node[1].Type != CbType.Bool)
-			{
-				Start.SemanticError(node.LineNumber, "OROR: Incompatible types: {0}, {1}", node[0].Type, node[1].Type);
-				node.Type = CbType.Error;
+					if(node[0].Type != CbType.Bool && node[1].Type != CbType.Bool){
+						Start.SemanticError(node.LineNumber, "OROR: Incompatible types: {0}, {1}", node[0].Type, node[1].Type);
+						node.Type = CbType.Error;
+						break;
+					}
+					node.Type = CbType.Bool;
 				break;
-			}
-			node.Type = CbType.Bool;
-			break;
+
 				default:
-						throw new Exception("Unexpected tag: "+node.Tag);
-				}
+					throw new Exception("Unexpected tag: "+node.Tag);
+			}
 		}
 
 	public override void Visit(AST_leaf node, object data){
