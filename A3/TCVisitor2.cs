@@ -191,11 +191,11 @@ public class TCVisitor2: Visitor {
 
         case NodeType.Call: // CHECK ME, DONE?
           node[0].Accept(this,data); // method name (could be a dotted expression)
-          node[1].Accept(this,data); // actual parameters           
+          node[1].Accept(this,data); // actual parameters
 
           // Make list to keep track of chain dot calls
           IList<AST> chainCall = new List<AST>();
-          
+
           // Traverse through Call tree to get names of dot calls
           AST nodePtr = node[0];
           for(;;)
@@ -212,7 +212,7 @@ public class TCVisitor2: Visitor {
                 }
                 nodePtr = nodePtr[0]; // traverse the pointer
           }
-            
+
           // Look up caller in symbol table
           SymTabEntry symbol = sy.LookUp(((AST_leaf)chainCall[chainCall.Count-1]).Sval);
           if(symbol == null){
@@ -224,13 +224,13 @@ public class TCVisitor2: Visitor {
           // Check call has same number of parameters as method definition
           AST_kary meth_params = (AST_kary)node[1];
           CbMethodType tMeth = symbol.Type as CbMethodType;
-          
+
           // if true, then tMeth must be an object making the call
           if (tMeth == null)
           {
             CbClass someClass = symbol.Type as CbClass;
             Console.WriteLine("Name: "+someClass.Name);
-            
+
             // search the associated method for the class
             CbMethod methd = someClass.FindMember(((AST_leaf)chainCall[0]).Sval) as CbMethod;
             if (methd == null){
@@ -240,7 +240,7 @@ public class TCVisitor2: Visitor {
             }
             tMeth = methd.Type as CbMethodType;
           }
-          
+
           if(meth_params.NumChildren != tMeth.Method.ArgType.Count){
             Start.SemanticError(node.LineNumber,"Number of arguments does not match the number in the method definition.");
             node.Type = CbType.Error;
@@ -397,7 +397,26 @@ public class TCVisitor2: Visitor {
           node[0].Accept(this,data);
           node[1].Accept(this,data);
           /* TODO ... check types */
-          node.Type = CbType.Error;  // FIX THIS
+          if(node[0].Kind != CbKind.Variable){
+            Start.SemanticError(node[0].LineNumber, "The identifier in the expression is not a variable (Index).");
+          }else if(!(node[0].Type is CFArray) || (node[0].Type == CbType.String)){
+            if(!(node[0].Type == CbType.Error)){
+              Start.SemanticError(node[0].LineNumber, "The variable being indexed is not of array or string type (Index).");
+              node.Type = CbType.Error;
+              //We don't actually know what we are indexing, but we should propogate the error anyway.
+              break;
+            }
+          }
+
+          if(node[0].Type == CbType.String){
+            node.Type = CbType.Char;
+          }
+          else{
+            node.Type = (node[0].Type as CFArray).ElementType;  // FIX THIS
+          }
+          if(node[1].Type != CbType.Int && node[1].Type != CbType.Error){
+            Start.SemanticError(node[0].LineNumber, "The index subscript must be of int type, but get type {0}", node[1].Type);
+          }
         break;
 
         case NodeType.Add: // done
