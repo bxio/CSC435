@@ -7,7 +7,7 @@
     * builds a symbol-table of top-level names: for namespaces and classes
 
     Author: Nigel Horspool
-    
+
     Dates: 2012-2014
 */
 
@@ -21,7 +21,7 @@ public class Start {
 
     public static int SemanticErrorCnt = 0;  // count of semantic errors
     public static int WarningMsgCnt = 0;     // count of warning messages
-    
+
     // reports a semantic error
     // if no line number can be associated with the message, 0 should be used
     public static void SemanticError( int lineNum, string message, params object[] args ) {
@@ -31,7 +31,7 @@ public class Start {
             Console.Write("*** Error: ");
         Console.WriteLine(String.Format(message, args));
         SemanticErrorCnt++;
-    }  
+    }
 
     // outputs a warning message
     public static void WarningMessage( int lineNum, string message, params object[] args ) {
@@ -51,12 +51,12 @@ public class Start {
                 sc.Initialize();
                 if (printTokens)
                     sc.TrackTokens("tokens.txt");
-        
+
                 Parser parser = new Parser(sc);
-            
+
                 if (parser.Parse())
                     result = parser.Tree;
-        
+
                 sc.CleanUp();
             }
         } catch( Exception e ) {
@@ -64,7 +64,7 @@ public class Start {
         }
         return result;
     }
-    
+
     static void Usage() {
         string[] usage = {
             "Usage:",
@@ -80,7 +80,7 @@ public class Start {
         }
         System.Environment.Exit(1);  // terminate!
     }
-    
+
     public static void Main( string[] args ) {
         string filename = null;
         bool printAST = false;
@@ -124,7 +124,7 @@ public class Start {
         }
 
         if (printAST) {
-        	PrVisitor printVisitor = new PrVisitor();
+          PrVisitor printVisitor = new PrVisitor();
             tree.Accept(printVisitor,0);
         }
 
@@ -132,20 +132,22 @@ public class Start {
 
         TLVisitor tlv = new TLVisitor();
         tree.Accept(tlv, NameSpace.TopLevelNames);
- 
-		TCVisitor1 tc = new TCVisitor1();
-		tree.Accept(tc, NameSpace.TopLevelNames);
+
+        TCVisitor1 tc = new TCVisitor1();
+        tree.Accept(tc, NameSpace.TopLevelNames);
+        TCVisitor2 tc2 = new TCVisitor2();
+        tree.Accept(tc2, NameSpace.TopLevelNames);
 
 /*      // Tasks for Assignment 3
-        
-        
+
+
         // perform full typechecking plus additional semantic checking ...
-        
+
         ... instantiate type-checking visitor(s) and invoke it/them here
 
         // allow inspection of all the type annotations
         if (printASTtc) {
-        	PrVisitor printVisitor = new PrVisitor();
+          PrVisitor printVisitor = new PrVisitor();
             tree.Accept(printVisitor);    // print AST with the datatype annotations
         }
 */
@@ -160,11 +162,11 @@ public class Start {
 
 /*      // Tasks for Assignment 4
 
-		// generate intermediate representation (IR) code in LLVM's text formal
-		
-		... instantiate an IR generating visitor and invoke it here
-		
-		// ideally no semantic errors are detected while creating IR code, but in case
+    // generate intermediate representation (IR) code in LLVM's text formal
+
+    ... instantiate an IR generating visitor and invoke it here
+
+    // ideally no semantic errors are detected while creating IR code, but in case
         if (semanticErrorCnt > 0) {
             Console.WriteLine("\n{0} errors reported\n", semanticErrorCnt);
             return;
