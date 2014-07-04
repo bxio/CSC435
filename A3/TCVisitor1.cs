@@ -26,7 +26,6 @@ namespace FrontEnd {
 // of members (but each is associated with a minimal field, method
 // or const type description as appropriate).
 public class TCVisitor1: Visitor {
-	private Dictionary<string, AST> pendingClassDefns = null;
 	private NameSpace currentNameSpace = null;
 
 	// constructor
@@ -35,7 +34,6 @@ public class TCVisitor1: Visitor {
 	}
 
 	public override void Visit(AST_kary node, object data){
-		Dictionary<string, AST> savedList;
 		switch(node.Tag){
 		case NodeType.UsingList: //Do Nothing
 			currentNameSpace = (NameSpace)data;
