@@ -323,6 +323,33 @@ public class TCVisitor2: Visitor {
           node.Type = node[0].Type;
         break;
 
+        case NodeType.Array:
+            // Check if type for array is valid
+              switch(((AST_leaf)node[0]).Tag)
+              {
+                  case NodeType.IntType:
+                    node.Type = CbType.Int;
+                    break;
+                  case NodeType.CharType:
+                    node.Type = CbType.Char;
+                    break;
+                  case NodeType.StringType:
+                    node.Type = CbType.String;
+                    break;
+                  case NodeType.Ident:
+                    String name = ((AST_leaf)node[0]).Sval;
+                    CbClass t = ns.LookUp(name) as CbClass;
+                    if(t == null){
+                      Start.SemanticError(node.LineNumber, "Invalid Type");
+                    }
+                    node.Type = CbType.Null;
+                    break;
+                  default:
+                    Start.SemanticError(node.LineNumber, "Invalid Type");
+                    node.Type = CbType.Error;
+                    break;
+              }
+            break;
         case NodeType.NewArray: // CHECK ME
           node[0].Accept(this,data);
           node[1].Accept(this,data);
@@ -399,7 +426,7 @@ public class TCVisitor2: Visitor {
           /* TODO ... check types */
           if(node[0].Kind != CbKind.Variable){
             Start.SemanticError(node[0].LineNumber, "The identifier in the expression is not a variable (Index).");
-          }else if(!(node[0].Type is CFArray) || (node[0].Type == CbType.String)){
+          }else if(!(node[0].Type is CFArray) || !(node[0].Type == CbType.String)){
             if(!(node[0].Type == CbType.Error)){
               Start.SemanticError(node[0].LineNumber, "The variable being indexed is not of array or string type (Index).");
               node.Type = CbType.Error;
@@ -410,10 +437,10 @@ public class TCVisitor2: Visitor {
 
           if(node[0].Type == CbType.String){
             node.Type = CbType.Char;
-          }
-          else{
+          }else{
             node.Type = (node[0].Type as CFArray).ElementType;  // FIX THIS
           }
+          
           if(node[1].Type != CbType.Int && node[1].Type != CbType.Error){
             Start.SemanticError(node[0].LineNumber, "The index subscript must be of int type, but get type {0}", node[1].Type);
           }

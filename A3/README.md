@@ -7,6 +7,19 @@ Team Members:
 * Bill Xiong V00737042
 * Wesley Chow V00727646
 
-To run, execute `build.bat`.
+The submission has the following:
+    TCVisitor1.cs
+    TCVisitor2.cs
+    cbc.cs
+    Cblexer.lex
+    CbParser.y
+    CbPrVisitor.cs
+    CbSymTab.cs
+    CbTLVisitor.cs
+    CbTopLevel.cs
+    CbType.cs
+    CbVisitor.cs
+    FullTest.cs
+    build.bat
 
-This is our first exposure to the world of compiler writing. Please be merciful.
+Please spare our marks.
