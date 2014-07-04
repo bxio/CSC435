@@ -191,11 +191,30 @@ public class TCVisitor2: Visitor {
 
         case NodeType.Call: // CHECK ME, DONE?
           node[0].Accept(this,data); // method name (could be a dotted expression)
-          node[1].Accept(this,data); // actual parameters
-          /* TODO ... check types */
+          node[1].Accept(this,data); // actual parameters           
 
-          // Look up method in symbol table
-          SymTabEntry symbol = sy.LookUp(((AST_leaf)node[0][1]).Sval);
+          // Make list to keep track of chain dot calls
+          IList<AST> chainCall = new List<AST>();
+          
+          // Traverse through Call tree to get names of dot calls
+          AST nodePtr = node[0];
+          for(;;)
+          {
+                if (nodePtr.Tag == NodeType.Dot){
+                    chainCall.Add(nodePtr[1]);
+                }else if (nodePtr.Tag == NodeType.Index){
+                    Console.WriteLine("Not tested yet");
+                    chainCall.Add(nodePtr[1]);
+                }else{
+                    //Console.Write(nodePtr.Tag);
+                    chainCall.Add(nodePtr);
+                    break;
+                }
+                nodePtr = nodePtr[0]; // traverse the pointer
+          }
+            
+          // Look up caller in symbol table
+          SymTabEntry symbol = sy.LookUp(((AST_leaf)chainCall[chainCall.Count-1]).Sval);
           if(symbol == null){
            //complain(node.LineNumber,"unknown method name'"+((AST_leaf)node[0][1]).Sval+"'");
             node.Type = CbType.Error;
@@ -205,6 +224,23 @@ public class TCVisitor2: Visitor {
           // Check call has same number of parameters as method definition
           AST_kary meth_params = (AST_kary)node[1];
           CbMethodType tMeth = symbol.Type as CbMethodType;
+          
+          // if true, then tMeth must be an object making the call
+          if (tMeth == null)
+          {
+            CbClass someClass = symbol.Type as CbClass;
+            Console.WriteLine("Name: "+someClass.Name);
+            
+            // search the associated method for the class
+            CbMethod methd = someClass.FindMember(((AST_leaf)chainCall[0]).Sval) as CbMethod;
+            if (methd == null){
+                Start.SemanticError(node.LineNumber,"{0}: No such method in class {1} to be called",((AST_leaf)chainCall[0]).Sval,someClass.Name);
+                node.Type = CbType.Error;
+                break;
+            }
+            tMeth = methd.Type as CbMethodType;
+          }
+          
           if(meth_params.NumChildren != tMeth.Method.ArgType.Count){
             Start.SemanticError(node.LineNumber,"Number of arguments does not match the number in the method definition.");
             node.Type = CbType.Error;
@@ -310,7 +346,7 @@ public class TCVisitor2: Visitor {
           }
         break;
 
-        case NodeType.NewClass: // FIX ME
+        case NodeType.NewClass: // Done?
           node[0].Accept(this,data);
           /* TODO ... check that operand is a class */
           if(!(node[0].Type is CbClass)){
