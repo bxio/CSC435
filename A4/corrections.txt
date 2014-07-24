@@ -1,0 +1,37 @@
+Corrections
+===========
+
+1. In file LLVM.cs, the line
+     Debug.Assert(suspensionCnt==0);
+   should be deleted or commented out. (Line # 79.)
+   [Corrected: 13:55, 14 July.]
+
+2. In file CbTypeCheckVisitor2.cs, the case for the Index tag
+   needs to include the assignment
+         node.Kind = CbKind.Variable;
+   Inserting this just before the break at line 305 is OK.
+   [Corrected: 15 July.]
+
+3. Several corrections/improvements have been made to these files:
+      LLVMVisitor2.cs
+      LLVM-Definitions.cs
+      LLVM-WriteMethods.cs
+      LLVM.cs
+      CbTypeCheckVisitor2.cs
+      cbc.cs
+   and there is one new source code file named:
+      LLVM-Arrays.cs
+   The improvements are to provide support for arrays in Cb. The
+   methods which generate LLVM code for array access are provided
+   in the new file.
+   The corrections fix issues involving
+      use of an implicit this pointer when calling a method in same class
+      accessing fields in the current instance (with implicit this pointer)
+      LLVM code not quite correct for a 64 bit processor
+
+   Note: a test program 'ArrayTestingWithFibs.cs' has been provided to
+   demonstrate array access working.
+
+4. In file LLVM-UtilityMethods.cs, line 125 in the WriteIntInst method
+   should be
+    	case NodeType.Div: op = "sdiv"; break;

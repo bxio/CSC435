@@ -76,7 +76,7 @@ namespace FrontEnd
 
         // Must be called when the LLVM code generation is finished
         public void Dispose() {
-            Debug.Assert(suspensionCnt == 0);
+            //Debug.Assert(suspensionCnt == 0);
             string s;
             switch(targetTriple) {
             case "i686-pc-mingw32": s = epilog32; break;
@@ -123,7 +123,7 @@ namespace FrontEnd
         // Diverted LLVM code can be reinserted using this method
         public void InsertCode(string code)
         {
-            ll.WriteLine("\n; --- INSERTED CODE FOLLOWS ---")
+            ll.WriteLine("\n; --- INSERTED CODE FOLLOWS ---");
             ll.WriteLine(code);
             ll.WriteLine("; --- END OF INSERTED CODE ---");
         }
@@ -143,7 +143,13 @@ namespace FrontEnd
 
         public string GetTypeDescr(CFArray bt)
         {
-            return GetTypeDescr(bt.ElementType)+"*";
+            //return GetTypeDescr(bt.ElementType)+"*";
+            CbType e = bt.ElementType;
+            if (e == CbType.Char)
+            	return "%.arrayChar*";
+            if (e == CbType.Int)
+            	return "%.arrayInt*";
+            return "%.arrayPtr*";
         }
 
         public string GetTypeDescr(CbClass bt)

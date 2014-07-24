@@ -1,0 +1,8 @@
+Creating the executable
+========================
+
+1. Assuming you have generated the lexer and parser already (CbLexer.cs and CbParser.cs), run the build file to create a cbc.exe, which will generate your LL file (your IR code).
+
+2. Next, you want to SSH into a lab computer and then run the gen.sh script remotely to generate the executable for the test program.
+
+
