@@ -69,7 +69,7 @@ class Fibs {
 	}
 	
 	public static void AndOr(){
-		if ()
+		if (1 == 1)
 		{
 		
 		}
