@@ -1,11 +1,11 @@
 /*  CbLLVMVisitor2.cs
 
     Second stage of LLVM intermediate code generation
-    
+
     This generates code for every method in the program.
-    
+
     Author: Nigel Horspool
-    
+
     Dates: 2012-2014
 */
 
@@ -204,10 +204,38 @@ public class LLVMVisitor2: Visitor {
             sy = llvm.Join(thenEnd, sySaved, elseEnd, sy);
             break;
         case NodeType.While:
-            /*  TODO
-            node[0].Accept(this,data);
-            node[1].Accept(this,data);
-            */
+            #region Assignment 4 checkpoint 4 - while loop
+            {
+                string WhileCondLabel = llvm.CreateBBLabel("WhileCond");
+                string WhileBodyLabel = llvm.CreateBBLabel("WhileBody");
+                string WhileEndLabel = llvm.CreateBBLabel("WhileEnd");
+                LoopLabels.Add(WhileEndLabel);
+                //The while condition
+                llvm.WriteLabel(WhileCondLabel);
+                lastBBLabel = WhileCondLabel;
+                SymTab syBeforeCondition = sy.Clone();
+                node[0].Accept(this, data);
+                llvm.WriteCondBranch(lastValueLocation, WhileBodyLabel, WhileEndLabel);
+
+                //The while body
+                llvm.WriteLabel(WhileBodyLabel);
+                lastBBLabel = WhileBodyLabel;
+                node[1].Accept(this, data);
+                string endBody = lastBBLabel;
+                llvm.WriteBranch(WhileCondLabel);
+
+                //The while exit
+                llvm.WriteLabel(WhileEndLabel);
+                lastBBLabel =  WhileEndLabel;
+                SymTab syAfterCondition = sy;
+                sy = syBeforeCondition;
+                string endCond = lastBBLabel;
+                LoopLabels.RemoveAt(LoopLabels.Count - 1);
+                sy = llvm.Join(endBody, syAfterCondition, endCond, sy);
+
+            }
+            #endregion
+
             lastValueLocation = null;
             break;
         case NodeType.Return:
@@ -319,25 +347,49 @@ public class LLVMVisitor2: Visitor {
             lastValueLocation = llvm.NewClassInstance((CbClass)(node[0].Type));
             break;
         case NodeType.PlusPlus:
-			node[0].Accept(this,data);
-			lastValueLocation = llvm.ForceIntValue(lastValueLocation);
-			LLVMValue x1 = new LLVMValue("i32","1",false);
-            lastValueLocation = llvm.WriteIntInst(NodeType.Add, lastValueLocation, x1);
-			
-			SymTabEntry sym1 = lastLocalVariable;
-			sym1.SSAName = lastValueLocation.LLValue;
-
-			break;			
+    			node[0].Accept(this, data);
+          #region Assignment 4 check point 2 - Plusplus{
+            string Inst = "add";
+            if(node.Tag == NodeType.MinusMinus){
+              Inst = "sub";
+            }
+            if(lastValueLocation.IsReference){
+                LLVMValue operand = llvm.Dereference(lastValueLocation);
+                LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, operand, 1);
+                llvm.Store(result, lastValueLocation);
+            }else{
+                //Note that ++ and -- updates SSA if it's on a local variable
+                SymTabEntry dest = lastLocalVariable;
+                LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, lastValueLocation, 1);
+                dest.SSAName = result.LLValue;
+            }
+          }
+          #endregion
+          lastValueLocation = null;
+          break;
+			break;
         case NodeType.MinusMinus:
-			node[0].Accept(this,data);
-			lastValueLocation = llvm.ForceIntValue(lastValueLocation);
-			LLVMValue x2 = new LLVMValue("i32","1",false);
-            lastValueLocation = llvm.WriteIntInst(NodeType.Sub, lastValueLocation, x2);
+          node[0].Accept(this, data);
+          #region Assignment 4 check point 2 - Minusminus{
+            string Inst = "add";
+            if(node.Tag == NodeType.MinusMinus){
+              Inst = "sub";
+            }
+            if(lastValueLocation.IsReference){
+                LLVMValue operand = llvm.Dereference(lastValueLocation);
+                LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, operand, 1);
+                llvm.Store(result, lastValueLocation);
+            }else{
+                //Note that ++ and -- updates SSA if it's on a local variable
+                SymTabEntry dest = lastLocalVariable;
+                LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, lastValueLocation, 1);
+                dest.SSAName = result.LLValue;
+            }
+          }
+          #endregion
+          lastValueLocation = null;
+          break;
 
-			SymTabEntry sym2 = lastLocalVariable;
-			sym2.SSAName = lastValueLocation.LLValue;			
-			
-            break;
         case NodeType.UnaryPlus:
             // a no-op
             break;
@@ -383,20 +435,20 @@ public class LLVMVisitor2: Visitor {
         case NodeType.And:
 			node[0].Accept(this,data);
             savedValue = lastValueLocation;
-            node[1].Accept(this,data);		
+            node[1].Accept(this,data);
 			// TODO
 			break;
         case NodeType.Or:
             node[0].Accept(this,data);
-			
+
 			llvm.CreateBBLabel("");
-			
+
             savedValue = lastValueLocation;
             node[1].Accept(this,data);
             // TODO
             break;
         default:
-            throw new Exception("Unexpected tag: "+node.Tag);  
+            throw new Exception("Unexpected tag: "+node.Tag);
         }
     }
 
