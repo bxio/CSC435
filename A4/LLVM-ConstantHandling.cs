@@ -20,6 +20,7 @@ namespace FrontEnd
     {
         int stringConstNum = 0;     // used to number anonymous string constants
 
+
         public void OutputConstDefn( CbConst cnst, AST_leaf initVal ) {
             CbClass c = cnst.Owner;
             CbType cnstType = cnst.Type;

@@ -1,14 +1,14 @@
 /* LLVM-UtilityMethods.cs
- *
+ * 
  * Utility code to help with outputting intermediate code in the
  * LLVM text format (as a '.ll' file).
  *
  * These are the simpler utility methods
- *
+ * 
  * Author: Nigel Horspool
  * Date: July 2014
  */
-
+ 
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -17,7 +17,7 @@ using System.Diagnostics;
 
 namespace FrontEnd
 {
-
+        
     public partial class LLVM
     {
         int nextBBNumber = 0;       // used to number basic blocks
@@ -29,7 +29,7 @@ namespace FrontEnd
             return prefix + "." + nextBBNumber++;
         }
 
-        public string nextTemporary() {
+        private string nextTemporary() {
             return "%" + nextUnnamedIndex++;
         }
 
@@ -175,6 +175,7 @@ namespace FrontEnd
             Debug.Assert(cmp != null);
             return WriteCompInst(cmp, lhs, rhs);
         }
+
         public LLVMValue WriteIntInst_LiteralConst(string opcode, LLVMValue lhs, int rhs){
             lhs = ForceIntValue(lhs);
             string rv = nextTemporary();
@@ -212,6 +213,7 @@ namespace FrontEnd
             literalConstSpec = "i8";
           }
           ll.WriteLine("  {0} = load {1} {2}{3}", lhs.LLValue, literalConstSpec, rhs_literalConst, alignspec);
-       }
-  }
+       }		
+		
+	}
 }

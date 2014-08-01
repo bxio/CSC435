@@ -18,30 +18,18 @@ namespace FrontEnd {
 
 
 public class LLVMVisitor2: Visitor {
-    LLVM llvm;
-
-    // built-in methods which need special-case handling
-    CbMethod writeMethod, writeLineMethod, readLineMethod, parseMethod;
-
-    // Visits to some nodes (or subtrees) generate values which are needed
-    // after the visit returns.
-    // Such values are recorded in these fields of the visitor class.
-    // They are liable to be overwritten as a visit traversal proceeds, so a
-    // caller which needs these values must copy them elsewhere immediately
-    // after control returns to that caller.
-    LLVMValue lastValueLocation;  // used to remember where a visit left a value
-    SymTabEntry lastLocalVariable;
-    string lastBBLabel; // used to remember label on last basic block processed
-
-    // These fields track information appropriate to a particular part of a
-    // traversal, such as which method is currently being traversed.
     NameSpace ns;
     CbClass currentClass;
     CbMethod currentMethod;
-    LLVMValue thisPointer;  // LLVM temporary fold the 'this' instance pointer
-    Stack<LLVMValue> actualParameters;  // accumulates actual parameters for a call
-    SymTab sy;  // holds formal parameters & local variables of a method
-    IList<string> LoopLabels;  // needed to implement break/continue
+    LLVM llvm;
+    SymTab sy;
+    IList<string> LoopLabels;
+    CbMethod writeMethod, writeLineMethod, readLineMethod, parseMethod;
+    LLVMValue lastValueLocation;  // used to remember where a visit left a value
+    SymTabEntry lastLocalVariable;
+    string lastBBLabel; // used to remember label on last basic block processed
+    LLVMValue thisPointer;
+    Stack<LLVMValue> actualParameters;
 
     // constructor
     public LLVMVisitor2( LLVM llvm ) {
@@ -64,7 +52,6 @@ public class LLVMVisitor2: Visitor {
         thisPointer = null;
         lastBBLabel = null;
     }
-
 
 	public override void Visit(AST_kary node, object data) {
         switch(node.Tag) {
@@ -92,7 +79,7 @@ public class LLVMVisitor2: Visitor {
         case NodeType.ActualList:
             for(int i=0; i<node.NumChildren; i++) {
                 node[i].Accept(this, data);
-                actualParameters.Push(lastValueLocation); // remember the actual parameter
+                actualParameters.Push(lastValueLocation); // remember the argument
             }
             break;
         }
@@ -102,13 +89,12 @@ public class LLVMVisitor2: Visitor {
 	    LLVMValue savedValue;
         switch(node.Tag) {
         case NodeType.Program:
-            llvm.OutputArrayDefinitions();  // NEW!
             node[1].Accept(this, data);  // visit class declarations
             break;
         case NodeType.Class:
             string className = ((AST_leaf)node[0]).Sval;
             currentClass = ns.LookUp(className) as CbClass;
-            thisPointer = llvm.CreateThisPointer(currentClass);
+            thisPointer = new LLVMValue(llvm.GetTypeDescr(currentClass), "%this", false);
             // now visit the class's members -- only methods & consts matter
             AST_kary memberList = node[2] as AST_kary;
             for(int i=0; i<memberList.NumChildren; i++) {
@@ -118,10 +104,9 @@ public class LLVMVisitor2: Visitor {
             thisPointer = null;
             break;
         case NodeType.Const:
-            // already processed in first LLVM pass
+            // already processed in first pass
             break;
         case NodeType.Field:
-            // instance fields are handled by the visit to NodeType.Class
             break;
         case NodeType.Method:
             // get the method's type description
@@ -164,10 +149,12 @@ public class LLVMVisitor2: Visitor {
             SymTabEntry savedDest = lastLocalVariable;
             node[1].Accept(this,data);
             if (savedValue.IsReference)
+            {
                 llvm.Store(lastValueLocation, savedValue);
+            } 
             else
-            {   // it was a local variable on the LHS
-                // we generate no code, just remember a new name for that LHS
+            {  // it was a local variable on the LHS
+               // we generate no code, just remember a new name for that LHS
                 lastValueLocation = llvm.Coerce(lastValueLocation, node[1].Type, node[0].Type);
                 savedDest.SSAName = lastValueLocation.LLValue;
                 lastLocalVariable = null;
@@ -178,30 +165,25 @@ public class LLVMVisitor2: Visitor {
             string TL = llvm.CreateBBLabel("iftrue");
             string FL = llvm.CreateBBLabel("ifelse");
             string JL = llvm.CreateBBLabel("ifend");
-            // generate code for the condition test and branch
             node[0].Accept(this,data);
             llvm.WriteCondBranch(lastValueLocation, TL, FL);
-            lastValueLocation = null;  // Bug fix, line moved from below
-            // make a copy of the SSA name information
             SymTab syCopy = sy.Clone();
-            // generate code for the then clause
             llvm.WriteLabel(TL);
             lastBBLabel = TL;
             node[1].Accept(this,data);
             string thenEnd = lastBBLabel;
             llvm.WriteBranch(JL);
-            // generate code for the else clause
             llvm.WriteLabel(FL);
             lastBBLabel = FL;
-            SymTab sySaved = sy;  // switch to saved copy of symbol table
+            SymTab sySaved = sy;
             sy = syCopy;
             node[2].Accept(this,data);
             string elseEnd = lastBBLabel;
             llvm.WriteBranch(JL);
-            // generate code for the merge point after the if statement
             llvm.WriteLabel(JL);
             lastBBLabel = JL;
             sy = llvm.Join(thenEnd, sySaved, elseEnd, sy);
+            lastValueLocation = null;
             break;
         case NodeType.While:
             /*  TODO
@@ -212,11 +194,11 @@ public class LLVMVisitor2: Visitor {
             break;
         case NodeType.Return:
             if (node[0] == null) {
-                llvm.WriteReturnInst(null);
+                llvm.WriteInst("ret void");
             } else {
                 node[0].Accept(this,data);
                 savedValue = llvm.Coerce(lastValueLocation, node[0].Type, currentMethod.ResultType);
-                llvm.WriteReturnInst(savedValue);
+                llvm.WriteInst("ret {0}", savedValue);
             }
             lastValueLocation  = null;
             break;
@@ -242,7 +224,6 @@ public class LLVMVisitor2: Visitor {
                 if (argt == CbType.Int || argt == CbType.Char)
                     savedValue = llvm.Dereference(savedValue);
                 llvm.CallBuiltInMethod(CbType.Void, name, savedValue);
-                lastValueLocation = null;  // ADDED
             } else
             if (m.Method == readLineMethod) {
                 lastValueLocation = llvm.CallBuiltInMethod(CbType.String, "@Console.ReadLine", null);
@@ -260,22 +241,15 @@ public class LLVMVisitor2: Visitor {
                 }
                 if (m.Method.IsStatic)
                     lastValueLocation = llvm.CallStaticMethod(m.Method, actuals);
-                else {
-                	if (savedValue == null) {
-                	    if (currentMethod.IsStatic)
-                	        Start.SemanticError(node.LineNumber,
-                	            "Cannot call virtual method without an object reference");
-                		savedValue = thisPointer;
-                	}
+                else
                     lastValueLocation = llvm.CallVirtualMethod(m.Method, savedValue, actuals);
-                }
             }
             break;
         case NodeType.Dot:
             node[0].Accept(this,data);
             string rhs = ((AST_leaf)node[1]).Sval;
             if (node.Kind == CbKind.Variable) {
-                // access a field with whose name is given by rhs
+                // access a field with name rhs
                 CbClass lhstype = node[0].Type as CbClass;
                 while (lhstype != null)
                 {
@@ -293,17 +267,15 @@ public class LLVMVisitor2: Visitor {
             if (node.Kind == CbKind.ClassName) {
                 // do nothing
             } else if (node[0].Type is CFArray && rhs == "Length") {
-                lastValueLocation = llvm.ArrayLength(node.Type, lastValueLocation);  // ADDED
             } else if (node[0].Type == CbType.String && rhs == "Length") {
-                // TODO
             } else {
                 // node.Kind == CbKind.None, it's a const or a method
                 CbClass lhstype = node[0].Type as CbClass;
                 CbConst mem = lhstype.Members[rhs] as CbConst;
-                if (mem != null)
-                    lastValueLocation = llvm.AccessClassConstant(mem);
-                // else
-                //    lastValueLocation = null;  // it was a method, do nothing
+                if (mem != null) {
+                    string name = "@"+lhstype.Name+"."+rhs;
+                    lastValueLocation = new LLVMValue(llvm.GetTypeDescr(node.Type),name,true);
+                }
             }
             break;
         case NodeType.Cast:
@@ -312,62 +284,28 @@ public class LLVMVisitor2: Visitor {
             break;
         case NodeType.NewArray:
             node[1].Accept(this,data);
-            // TODO -- done!
-            lastValueLocation = llvm.WriteNewArray(node[0].Type, lastValueLocation);
+            // TODO
             break;
         case NodeType.NewClass:
             lastValueLocation = llvm.NewClassInstance((CbClass)(node[0].Type));
             break;
         case NodeType.PlusPlus:
-          node[0].Accept(this, data);
-            string Inst = "add";
-            if (lastValueLocation.IsReference){
-                LLVMValue operand = llvm.Dereference(lastValueLocation);
-                LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, operand, 1);
-                llvm.Store(result, lastValueLocation);
-            }else{
-                //Note that ++ and -- updates SSA if it's on a local variable
-                SymTabEntry dest = lastLocalVariable;
-                LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, lastValueLocation, 1);
-                dest.SSAName = result.LLValue;
-            }
-          lastValueLocation = null;
-          break;
         case NodeType.MinusMinus:
-            node[0].Accept(this, data);
-              Inst = "sub";
-              if (lastValueLocation.IsReference){
-                  LLVMValue operand = llvm.Dereference(lastValueLocation);
-                  LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, operand, 1);
-                  llvm.Store(result, lastValueLocation);
-              }else{
-                  //Note that ++ and -- updates SSA if it's on a local variable
-                  SymTabEntry dest = lastLocalVariable;
-                  LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, lastValueLocation, 1);
-                  dest.SSAName = result.LLValue;
-              }
+            node[0].Accept(this,data);
+            // TODO 
             lastValueLocation = null;
             break;
         case NodeType.UnaryPlus:
-            // a no-op
-            break;
         case NodeType.UnaryMinus:
-            node[0].Accept(this, data);
-              LLVMValue tmp = lastValueLocation;
-              if (tmp.IsReference){
-                  //Load the value from memory
-                  tmp = llvm.Dereference(lastValueLocation);
-              }
-              lastValueLocation = llvm.WriteIntInst_LiteralConst("sub", 0, tmp);
+            node[0].Accept(this,data);
+            // TODO
             break;
         case NodeType.Index:
             node[0].Accept(this,data);
             savedValue = lastValueLocation;
             node[1].Accept(this,data);
             lastValueLocation = llvm.ForceIntValue(lastValueLocation);
-            // TODO  -- done!
-            lastValueLocation = llvm.ElementReference(node.Type,
-				savedValue, lastValueLocation);
+            // TODO
             break;
         case NodeType.Add:
         case NodeType.Sub:
@@ -415,33 +353,31 @@ public class LLVMVisitor2: Visitor {
             break;
         case NodeType.Ident:
             string name = node.Sval;
-            // Do we have a local variable of the current method?
             SymTabEntry local = sy.LookUp(name);
             if (local != null) {
-                lastValueLocation = llvm.AccessLocalVariable(local);
+                lastValueLocation = new LLVMValue(llvm.GetTypeDescr(local.Type), local.SSAName, false);
                 lastLocalVariable = local;
                 return;
             }
-            // Do we have a member of the current class (or an inherited
-            // member of an ancestor class)?
+            CbMember mem;
             CbClass c = currentClass;
             while (c != null)
             {
-                CbMember mem;
                 if (c.Members.TryGetValue(name, out mem))
                 {
-                    // found in class c -- we are interested only in fields and constants
-                    if (mem is CbField)
+                    // found in class c
+                    node.Type = mem.Type;
+                    if (mem is CbField) {
                         lastValueLocation = llvm.RefClassField(thisPointer, (CbField)mem);
-                    else
-                    if (mem is CbConst)
+                    }
+                    if (mem is CbConst) {
                         lastValueLocation = llvm.AccessClassConstant((CbConst)mem);
-                    return;
+                    }
+                    return;  // it must be a method name?
                 }
                 c = c.Parent;
             }
-            // Otherwise, it's a class name or namespace name and there's no code
-            // to generate or anything else to do
+            // it's a class name or namespace name
             break;
         case NodeType.Break:
             // TODO

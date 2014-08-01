@@ -87,20 +87,18 @@ class Fibs {
         Console.WriteLine("In WhileLoop()");
         int k;
         k = 0;
-        while (k < 10)
-        {
+        //while (k < 10)
+        //{
             System.Console.WriteLine(k);
-            //if (k > 6)
-            //    break;
             k++;	
-        }    
+        //}    
     }
     
     public static void Main() {
         UnaryMinus();
 		PlusPlusMinusMinus();
         AndOr();
-        //WhileLoop();
+        WhileLoop();
 		Fibs f;
         f = new Fibs();
         f.Run();
