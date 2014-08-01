@@ -240,6 +240,7 @@ public class LLVMVisitor2: Visitor {
               sy = llvm.Join(labelBeforeWhile, syBeforeCondition, lastBBLabel, sy);
 
               //replace generated names
+              // Console.WriteLine(llvm.GeneratedNames);
               foreach (LLVM.strpair pair in llvm.GeneratedNames){
                   if (pair.b.StartsWith("%")) //don't replace constants!!!
                   loopbody = loopbody.Replace(pair.b, pair.a);
@@ -382,7 +383,7 @@ public class LLVMVisitor2: Visitor {
           break;
         case NodeType.MinusMinus:
             node[0].Accept(this, data);
-              string Inst = "sub";
+              Inst = "sub";
               if (lastValueLocation.IsReference){
                   LLVMValue operand = llvm.Dereference(lastValueLocation);
                   LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, operand, 1);
@@ -400,13 +401,12 @@ public class LLVMVisitor2: Visitor {
             break;
         case NodeType.UnaryMinus:
             node[0].Accept(this, data);
-
-              LLVMValue operand = lastValueLocation;
-              if (operand.IsReference){
+              LLVMValue tmp = lastValueLocation;
+              if (tmp.IsReference){
                   //Load the value from memory
-                  operand = llvm.Dereference(lastValueLocation);
+                  tmp = llvm.Dereference(lastValueLocation);
               }
-              lastValueLocation = llvm.WriteIntInst_LiteralConst("sub", 0, operand);
+              lastValueLocation = llvm.WriteIntInst_LiteralConst("sub", 0, tmp);
             break;
         case NodeType.Index:
             node[0].Accept(this,data);
