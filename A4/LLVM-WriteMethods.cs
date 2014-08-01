@@ -1,14 +1,14 @@
 /* LLVM-WriteMethods.cs
- *
+ * 
  * Utility code to help with outputting intermediate code in the
  * LLVM text format (as a '.ll' file).
  *
  * These are the simpler utility methods
- *
+ * 
  * Author: Nigel Horspool
  * Date: July 2014
  */
-
+ 
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -17,7 +17,7 @@ using System.Diagnostics;
 
 namespace FrontEnd
 {
-
+        
     public partial class LLVM
     {
 
@@ -26,7 +26,7 @@ namespace FrontEnd
         public void WriteMethodStart( CbClass c, CbMethod m, AST methodDecl ) {
             SSANumbering.Clear();
             if (m.Name == "Main" && m.IsStatic)
-                ll.Write("\ndefine {0} @main ", GetTypeDescr(m.ResultType));
+                ll.Write("\ndefine void @main ");
             else
                 ll.Write("\ndefine {0} @{1}.{2} ",
                     GetTypeDescr(m.ResultType), c.Name, m.Name);
@@ -120,7 +120,7 @@ namespace FrontEnd
             nextUnnamedIndex += 6;
             return new LLVMValue(instanceType,r,false);
         }
-
+        
         // generate code to call a virtual method m in class c
         // thisPtr is a value such as "%3" specifying where the instance pointer is held,
         // and args is an array of LLVM values to use as arguments in the method call;
@@ -198,7 +198,7 @@ namespace FrontEnd
                 ll.WriteLine("  call {0} {1} ()", rt, name);
             else
                 ll.WriteLine("  call {0} {1} ({2})", rt, name, arg);
-            return result;
+            return result;  
         }
 
         public void AllocLocalVar( string name, CbType type ) {
@@ -207,7 +207,7 @@ namespace FrontEnd
             ll.WriteLine("  %{0}.addr = alloca {1}, align {2}",
                 name, GetTypeDescr(type), align);
         }
-
+        
         // Returns the name of the LLVM temporary being used for a
         // local variable -- SSA number ing is used
         public LLVMValue RefLocalVar( string name, CbType type ) {
@@ -249,7 +249,7 @@ namespace FrontEnd
             if (destType == CbType.Int) {
                 // widen from char to int
                 ll.WriteLine("  {0} = zext {1} to i32", rv, src);
-                return new LLVMValue("i32", rv, false);
+                return new LLVMValue("i32", rv, false);   
             }
             if (destType == CbType.Char) {
                 // narrow from int to to char

@@ -1,14 +1,14 @@
 /* LLVM-UtilityMethods.cs
- *
+ * 
  * Utility code to help with outputting intermediate code in the
  * LLVM text format (as a '.ll' file).
  *
  * These are the simpler utility methods
- *
+ * 
  * Author: Nigel Horspool
  * Date: July 2014
  */
-
+ 
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -17,7 +17,7 @@ using System.Diagnostics;
 
 namespace FrontEnd
 {
-
+        
     public partial class LLVM
     {
         int nextBBNumber = 0;       // used to number basic blocks
@@ -29,7 +29,7 @@ namespace FrontEnd
             return prefix + "." + nextBBNumber++;
         }
 
-        public string nextTemporary() {
+        private string nextTemporary() {
             return "%" + nextUnnamedIndex++;
         }
 
@@ -175,43 +175,6 @@ namespace FrontEnd
             Debug.Assert(cmp != null);
             return WriteCompInst(cmp, lhs, rhs);
         }
-        public LLVMValue WriteIntInst_LiteralConst(string opcode, LLVMValue lhs, int rhs){
-            lhs = ForceIntValue(lhs);
-            string rv = nextTemporary();
-            string IntLiteral = rhs.ToString();
-            ll.WriteLine("  {0} = {1} i32 {2}, {3}", rv, opcode, lhs.LLValue, IntLiteral);
-            return new LLVMValue("i32", rv, false);
-        }
 
-        public LLVMValue WriteIntInst_LiteralConst(string opcode, int lhs, LLVMValue rhs){
-            rhs = ForceIntValue(rhs);
-            string rv = nextTemporary();
-            string IntLiteral = lhs.ToString();
-            ll.WriteLine("  {0} = {1} i32 {2}, {3}", rv, opcode, IntLiteral, rhs.LLValue);
-            return new LLVMValue("i32", rv, false);
-        }
-
-        public LLVMValue WriteCmpInst_LiteralConst(string opcode, LLVMValue lhs, int rhs)
-        {
-            string rv = nextTemporary();
-            string IntLiteral = rhs.ToString();
-            ll.WriteLine("  {0} = icmp {1} i{4} {2}, {3}", rv, opcode,
-               lhs.LLValue, IntLiteral, lhs.LLType == "i32" ? 32 : 8);
-            return new LLVMValue("i1", rv, false);
-        }
-
-        public void WriteInitialize(LLVMValue lhs, string rhs_literalConst)
-        {
-          string alignspec;
-          string literalConstSpec;
-          if (lhs.LLType.StartsWith("i32")){
-            alignspec = ", align 4";
-            literalConstSpec = "i32";
-          }else{
-            alignspec = ", align 1";
-            literalConstSpec = "i8";
-          }
-          ll.WriteLine("  {0} = load {1} {2}{3}", lhs.LLValue, literalConstSpec, rhs_literalConst, alignspec);
-       }
-  }
+	}
 }
