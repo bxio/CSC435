@@ -91,7 +91,7 @@ namespace FrontEnd
             }
             return result;
         }
-        #region Assignment 4 addition
+
         public LLVMValue JoinTemporary(string pred1, LLVMValue version1, string pred2, LLVMValue version2){
             Debug.Assert(version1.LLType == version2.LLType);
             string newIdent = JoinTemporary(pred1, version1.LLValue, pred2, version2.LLValue, version1.LLType);
@@ -108,6 +108,5 @@ namespace FrontEnd
                 pred2);
             return rv;
         }
-        #endregion
     }
 }

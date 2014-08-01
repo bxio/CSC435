@@ -181,7 +181,8 @@ public class LLVMVisitor2: Visitor {
             string FL = llvm.CreateBBLabel("ifelse");
             string JL = llvm.CreateBBLabel("ifend");
             // generate code for the condition test and branch
-            node[0].Accept(this,data);
+            string[] labels = {TL, FL, JL};
+            node[0].Accept(this,labels);
             llvm.WriteCondBranch(lastValueLocation, TL, FL);
             lastValueLocation = null;  // Bug fix, line moved from below
             // make a copy of the SSA name information
@@ -206,8 +207,6 @@ public class LLVMVisitor2: Visitor {
             sy = llvm.Join(thenEnd, sySaved, elseEnd, sy);
             break;
         case NodeType.While:
-            #region Assignment 4 checkpoint 4 - while loop
-            {
               string WhileCondLabel = llvm.CreateBBLabel("while.cond");
               string WhileBodyLabel = llvm.CreateBBLabel("while.body");
               string WhileEndLabel = llvm.CreateBBLabel("while.end");
@@ -255,8 +254,6 @@ public class LLVMVisitor2: Visitor {
               sy = llvm.Join(lastBBLabel, sy, labelAfterCondition, syAfterCondition);
               lastBBLabel = WhileEndLabel;
               LoopLabels.RemoveAt(LoopLabels.Count - 1);
-            }
-            #endregion
 
             lastValueLocation = null;
             break;
@@ -370,8 +367,6 @@ public class LLVMVisitor2: Visitor {
             break;
         case NodeType.PlusPlus:
           node[0].Accept(this, data);
-          #region Assignment 4 checkpoint 2 - Plusplus
-          {
             string Inst = "add";
             if (lastValueLocation.IsReference){
                 LLVMValue operand = llvm.Dereference(lastValueLocation);
@@ -383,15 +378,11 @@ public class LLVMVisitor2: Visitor {
                 LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, lastValueLocation, 1);
                 dest.SSAName = result.LLValue;
             }
-          }
-          #endregion
           lastValueLocation = null;
           break;
         case NodeType.MinusMinus:
             node[0].Accept(this, data);
-            #region Assignment 4 checkpoint 2 - Minusminus
-            {
-              string Inst "sub";
+              string Inst = "sub";
               if (lastValueLocation.IsReference){
                   LLVMValue operand = llvm.Dereference(lastValueLocation);
                   LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, operand, 1);
@@ -402,8 +393,6 @@ public class LLVMVisitor2: Visitor {
                   LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, lastValueLocation, 1);
                   dest.SSAName = result.LLValue;
               }
-            }
-            #endregion
             lastValueLocation = null;
             break;
         case NodeType.UnaryPlus:
@@ -411,16 +400,13 @@ public class LLVMVisitor2: Visitor {
             break;
         case NodeType.UnaryMinus:
             node[0].Accept(this, data);
-            #region Assignment 4 checkpoint 1 - Unary Minus Operator
-            {
+
               LLVMValue operand = lastValueLocation;
               if (operand.IsReference){
                   //Load the value from memory
                   operand = llvm.Dereference(lastValueLocation);
               }
               lastValueLocation = llvm.WriteIntInst_LiteralConst("sub", 0, operand);
-            }
-            #endregion
             break;
         case NodeType.Index:
             node[0].Accept(this,data);
@@ -456,8 +442,6 @@ public class LLVMVisitor2: Visitor {
             break;
         case NodeType.And:
         case NodeType.Or:
-            #region Assignment 4 checkpoint 3 - Conditional And Or
-            {
               //save lhs start block
               string LabelContext = lastBBLabel;
               //lhs
@@ -486,8 +470,6 @@ public class LLVMVisitor2: Visitor {
               //end - phi bool1 and bool2 together
               llvm.WriteLabel(CondEnd);
               lastValueLocation = llvm.JoinTemporary(LabelContext, tobool1, CondRhs, tobool2);
-            }
-            #endregion
             // TODO
             break;
         default:

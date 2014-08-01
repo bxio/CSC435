@@ -175,7 +175,6 @@ namespace FrontEnd
             Debug.Assert(cmp != null);
             return WriteCompInst(cmp, lhs, rhs);
         }
-        #region Assignment 4 Utility Methods
         public LLVMValue WriteIntInst_LiteralConst(string opcode, LLVMValue lhs, int rhs){
             lhs = ForceIntValue(lhs);
             string rv = nextTemporary();
@@ -214,6 +213,5 @@ namespace FrontEnd
           }
           ll.WriteLine("  {0} = load {1} {2}{3}", lhs.LLValue, literalConstSpec, rhs_literalConst, alignspec);
        }
-        #endregion
   }
 }
