@@ -236,7 +236,7 @@ public class LLVMVisitor2: Visitor {
 
           //second pass
           string loopbody = llvm.UndivertOutput();
-          //join : after the loop body and before the condition
+          //join : after the loop body and before the condition  
           sy = llvm.Join(labelBeforeWhile, syBeforeCondition, lastBBLabel, sy);
 
           //replace generated names
@@ -258,16 +258,6 @@ public class LLVMVisitor2: Visitor {
           LoopLabels.RemoveAt(LoopLabels.Count - 1);
           lastValueLocation = null;
           break;
-        case NodeType.Return:
-            if (node[0] == null) {
-                llvm.WriteReturnInst(null);
-            } else {
-                node[0].Accept(this,data);
-                savedValue = llvm.Coerce(lastValueLocation, node[0].Type, currentMethod.ResultType);
-                llvm.WriteReturnInst(savedValue);
-            }
-            lastValueLocation  = null;
-            break;
         case NodeType.Return:
             if (node[0] == null) {
                 llvm.WriteReturnInst(null);

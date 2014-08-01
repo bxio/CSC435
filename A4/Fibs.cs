@@ -69,15 +69,38 @@ class Fibs {
 	}
 	
 	public static void AndOr(){
+        Console.WriteLine("In AndOr()");
 		if (1 == 1)
 		{
-		
+            int x,y;
+            x = 2;
+            y = 3;
+            if (x == 2 && y==3)
+            {
+                Console.WriteLine("X is 2 and Y is 3.");
+            }
 		}
 	}
 	
+    public static void WhileLoop()
+    {
+        Console.WriteLine("In WhileLoop()");
+        int k;
+        k = 0;
+        while (k < 10)
+        {
+            System.Console.WriteLine(k);
+            //if (k > 6)
+            //    break;
+            k++;	
+        }    
+    }
+    
     public static void Main() {
         UnaryMinus();
 		PlusPlusMinusMinus();
+        AndOr();
+        //WhileLoop();
 		Fibs f;
         f = new Fibs();
         f.Run();
