@@ -106,7 +106,13 @@ namespace FrontEnd
                 } else
                     throw new Exception("Inconsistent symbol tables");
             }
-            //llvm.InsertCode(code);
+			
+			//llvm.InsertCode(code);
+			// Below is the equivalent to the one line above
+			ll.WriteLine("\n; --- INSERTED CODE FOLLOWS ---");
+            ll.WriteLine(code);
+            ll.WriteLine("; --- END OF INSERTED CODE ---");
+            
         }
 
     }
