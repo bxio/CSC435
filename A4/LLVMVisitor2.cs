@@ -67,7 +67,7 @@ public class LLVMVisitor2: Visitor {
         lastBBLabel = null;
     }
 
-  public override void Visit(AST_kary node, object data) {
+	public override void Visit(AST_kary node, object data) {
         switch(node.Tag) {
         case NodeType.ClassList:
             // visit each class declared in the program
@@ -99,8 +99,8 @@ public class LLVMVisitor2: Visitor {
         }
     }
 
-  public override void Visit( AST_nonleaf node, object data ) {
-      LLVMValue savedValue;
+	public override void Visit( AST_nonleaf node, object data ) {
+	    LLVMValue savedValue;
         switch(node.Tag) {
         case NodeType.Program:
             llvm.OutputArrayDefinitions();  // NEW!
@@ -156,7 +156,8 @@ public class LLVMVisitor2: Visitor {
                 AST_leaf local = locals[i] as AST_leaf;
                 SymTabEntry en = sy.Binding(local.Sval, local.LineNumber);
                 en.Type = node[0].Type;
-                en.SSAName = "%" + local.Sval;
+
+                en.SSAName = llvm.CreateSSAName(en.Name);
             }
             break;
         case NodeType.Assign:
@@ -164,14 +165,14 @@ public class LLVMVisitor2: Visitor {
             savedValue = lastValueLocation;
             SymTabEntry savedDest = lastLocalVariable;
             node[1].Accept(this,data);
-            if (savedValue.IsReference)
-                llvm.Store(lastValueLocation, savedValue);
-            else
-            {   // it was a local variable on the LHS
-                // we generate no code, just remember a new name for that LHS
-                lastValueLocation = llvm.Coerce(lastValueLocation, node[1].Type, node[0].Type);
-                savedDest.SSAName = lastValueLocation.LLValue;
-                lastLocalVariable = null;
+            if (savedValue.IsReference){
+              llvm.Store(lastValueLocation, savedValue);
+            }else{
+              // it was a local variable on the LHS
+              // we generate no code, just remember a new name for that LHS
+              lastValueLocation = llvm.Coerce(lastValueLocation, node[1].Type, node[0].Type);
+              savedDest.SSAName = lastValueLocation.LLValue;
+              lastLocalVariable = null;
             }
             lastValueLocation = null;
             break;
@@ -207,33 +208,53 @@ public class LLVMVisitor2: Visitor {
         case NodeType.While:
             #region Assignment 4 checkpoint 4 - while loop
             {
-                string WhileCondLabel = llvm.CreateBBLabel("WhileCond");
-                string WhileBodyLabel = llvm.CreateBBLabel("WhileBody");
-                string WhileEndLabel = llvm.CreateBBLabel("WhileEnd");
-                LoopLabels.Add(WhileEndLabel);
-                //The while condition
-                llvm.WriteLabel(WhileCondLabel);
-                lastBBLabel = WhileCondLabel;
-                SymTab syBeforeCondition = sy.Clone();
-                node[0].Accept(this, data);
-                llvm.WriteCondBranch(lastValueLocation, WhileBodyLabel, WhileEndLabel);
+              string WhileCondLabel = llvm.CreateBBLabel("while.cond");
+              string WhileBodyLabel = llvm.CreateBBLabel("while.body");
+              string WhileEndLabel = llvm.CreateBBLabel("while.end");
+              LoopLabels.Add(WhileEndLabel);
 
-                //The while body
-                llvm.WriteLabel(WhileBodyLabel);
-                lastBBLabel = WhileBodyLabel;
-                node[1].Accept(this, data);
-                string endBody = lastBBLabel;
-                llvm.WriteBranch(WhileCondLabel);
+              string labelBeforeWhile = lastBBLabel;
+              SymTab syBeforeCondition = sy.Clone();
+              llvm.WriteBranch(WhileCondLabel);
+              llvm.WriteLabel(WhileCondLabel);
 
-                //The while exit
-                llvm.WriteLabel(WhileEndLabel);
-                lastBBLabel =  WhileEndLabel;
-                SymTab syAfterCondition = sy;
-                sy = syBeforeCondition;
-                string endCond = lastBBLabel;
-                LoopLabels.RemoveAt(LoopLabels.Count - 1);
-                sy = llvm.Join(endBody, syAfterCondition, endCond, sy);
+              //first pass : no output
+              llvm.DivertOutput();
 
+              //The while condition
+              lastBBLabel = WhileCondLabel;
+              node[0].Accept(this, data);
+              llvm.WriteCondBranch(lastValueLocation, WhileBodyLabel, WhileEndLabel);
+              SymTab syAfterCondition = sy.Clone();
+              string labelAfterCondition = lastBBLabel;
+
+              //The while body
+              llvm.WriteLabel(WhileBodyLabel);
+              lastBBLabel = WhileBodyLabel;
+              node[1].Accept(this, data);
+              string endBody = lastBBLabel;
+              llvm.WriteBranch(WhileCondLabel);
+
+              //second pass
+              string loopbody = llvm.UndivertOutput();
+              //join : after the loop body and before the condition
+              sy = llvm.Join(labelBeforeWhile, syBeforeCondition, lastBBLabel, sy);
+
+              //replace generated names
+              foreach (LLVM.strpair pair in llvm.GeneratedNames){
+                  if (pair.b.StartsWith("%")) //don't replace constants!!!
+                  loopbody = loopbody.Replace(pair.b, pair.a);
+              }
+              //write out
+              llvm.WriteRaw(loopbody);
+
+              //The while exit
+              llvm.WriteLabel(WhileEndLabel);
+
+              //join: after cond and before cond
+              sy = llvm.Join(lastBBLabel, sy, labelAfterCondition, syAfterCondition);
+              lastBBLabel = WhileEndLabel;
+              LoopLabels.RemoveAt(LoopLabels.Count - 1);
             }
             #endregion
 
@@ -290,12 +311,12 @@ public class LLVMVisitor2: Visitor {
                 if (m.Method.IsStatic)
                     lastValueLocation = llvm.CallStaticMethod(m.Method, actuals);
                 else {
-                  if (savedValue == null) {
-                      if (currentMethod.IsStatic)
-                          Start.SemanticError(node.LineNumber,
-                              "Cannot call virtual method without an object reference");
-                    savedValue = thisPointer;
-                  }
+                	if (savedValue == null) {
+                	    if (currentMethod.IsStatic)
+                	        Start.SemanticError(node.LineNumber,
+                	            "Cannot call virtual method without an object reference");
+                		savedValue = thisPointer;
+                	}
                     lastValueLocation = llvm.CallVirtualMethod(m.Method, savedValue, actuals);
                 }
             }
@@ -349,16 +370,18 @@ public class LLVMVisitor2: Visitor {
             break;
         case NodeType.PlusPlus:
           node[0].Accept(this, data);
-          #region Assignment 4 check point 2 - Minusminus{
-            if(lastValueLocation.IsReference){
-              LLVMValue operand = llvm.Dereference(lastValueLocation);
-              LLVMValue result = llvm.WriteIntInst_LiteralConst("add", operand, 1);
-              llvm.Store(result, lastValueLocation);
+          #region Assignment 4 checkpoint 2 - Plusplus
+          {
+            string Inst = "add";
+            if (lastValueLocation.IsReference){
+                LLVMValue operand = llvm.Dereference(lastValueLocation);
+                LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, operand, 1);
+                llvm.Store(result, lastValueLocation);
             }else{
-              //Note that ++ and -- updates SSA if it's on a local variable
-              SymTabEntry dest = lastLocalVariable;
-              LLVMValue result = llvm.WriteIntInst_LiteralConst("add", lastValueLocation, 1);
-              dest.SSAName = result.LLValue;
+                //Note that ++ and -- updates SSA if it's on a local variable
+                SymTabEntry dest = lastLocalVariable;
+                LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, lastValueLocation, 1);
+                dest.SSAName = result.LLValue;
             }
           }
           #endregion
@@ -366,16 +389,18 @@ public class LLVMVisitor2: Visitor {
           break;
         case NodeType.MinusMinus:
             node[0].Accept(this, data);
-            #region Assignment 4 check point 2 - Minusminus{
-              if(lastValueLocation.IsReference){
-                LLVMValue operand = llvm.Dereference(lastValueLocation);
-                LLVMValue result = llvm.WriteIntInst_LiteralConst("sub", operand, 1);
-                llvm.Store(result, lastValueLocation);
+            #region Assignment 4 checkpoint 2 - Minusminus
+            {
+              string Inst "sub";
+              if (lastValueLocation.IsReference){
+                  LLVMValue operand = llvm.Dereference(lastValueLocation);
+                  LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, operand, 1);
+                  llvm.Store(result, lastValueLocation);
               }else{
-                //Note that ++ and -- updates SSA if it's on a local variable
-                SymTabEntry dest = lastLocalVariable;
-                LLVMValue result = llvm.WriteIntInst_LiteralConst("sub", lastValueLocation, 1);
-                dest.SSAName = result.LLValue;
+                  //Note that ++ and -- updates SSA if it's on a local variable
+                  SymTabEntry dest = lastLocalVariable;
+                  LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, lastValueLocation, 1);
+                  dest.SSAName = result.LLValue;
               }
             }
             #endregion
@@ -386,15 +411,14 @@ public class LLVMVisitor2: Visitor {
             break;
         case NodeType.UnaryMinus:
             node[0].Accept(this, data);
-            #region Assignment 4 check point 1 - Unary Minus Operator
+            #region Assignment 4 checkpoint 1 - Unary Minus Operator
             {
-                LLVMValue operand = lastValueLocation;
-                if (operand.IsReference)
-                {
-                    //Load the value from memory
-                    operand = llvm.Dereference(lastValueLocation);
-                }
-                lastValueLocation = llvm.WriteIntInst_LiteralConst("sub", 0, operand);
+              LLVMValue operand = lastValueLocation;
+              if (operand.IsReference){
+                  //Load the value from memory
+                  operand = llvm.Dereference(lastValueLocation);
+              }
+              lastValueLocation = llvm.WriteIntInst_LiteralConst("sub", 0, operand);
             }
             #endregion
             break;
@@ -405,7 +429,7 @@ public class LLVMVisitor2: Visitor {
             lastValueLocation = llvm.ForceIntValue(lastValueLocation);
             // TODO  -- done!
             lastValueLocation = llvm.ElementReference(node.Type,
-        savedValue, lastValueLocation);
+				savedValue, lastValueLocation);
             break;
         case NodeType.Add:
         case NodeType.Sub:
@@ -434,34 +458,34 @@ public class LLVMVisitor2: Visitor {
         case NodeType.Or:
             #region Assignment 4 checkpoint 3 - Conditional And Or
             {
-                //save lhs start block
-                string LabelContext = lastBBLabel;
-                //lhs
-                node[0].Accept(this, data);
-                LLVMValue lhs = lastValueLocation;
-                if (lhs.IsReference)
-                    lhs = llvm.Dereference(lhs);
-                LLVMValue tobool1 = llvm.WriteCmpInst_LiteralConst("ne", lhs, 0);
-                string CondRhs = llvm.CreateBBLabel("CondRhs");
-                string CondEnd =llvm.CreateBBLabel("CondEnd");
+              //save lhs start block
+              string LabelContext = lastBBLabel;
+              //lhs
+              node[0].Accept(this, data);
+              LLVMValue lhs = lastValueLocation;
+              if (lhs.IsReference)
+                  lhs = llvm.Dereference(lhs);
+              LLVMValue tobool1 = llvm.WriteCmpInst_LiteralConst("ne", lhs, 0);
+              string CondRhs = llvm.CreateBBLabel("CondRhs");
+              string CondEnd =llvm.CreateBBLabel("CondEnd");
 
-                if (node.Tag == NodeType.And)
-                    llvm.WriteCondBranch(tobool1, CondRhs, CondEnd);
-                else
-                    llvm.WriteCondBranch(tobool1, CondEnd, CondRhs);
+              if (node.Tag == NodeType.And)
+                  llvm.WriteCondBranch(tobool1, CondRhs, CondEnd);
+              else
+                  llvm.WriteCondBranch(tobool1, CondEnd, CondRhs);
 
-                //rhs
-                llvm.WriteLabel(CondRhs);
-                node[1].Accept(this, data);
-                LLVMValue rhsCond = lastValueLocation;
-                if (rhsCond.IsReference)
-                    rhsCond = llvm.Dereference(rhsCond);
-                LLVMValue tobool2 = llvm.WriteCmpInst_LiteralConst("ne", rhsCond, 0);
-                llvm.WriteBranch(CondEnd);
+              //rhs
+              llvm.WriteLabel(CondRhs);
+              node[1].Accept(this, data);
+              LLVMValue rhsCond = lastValueLocation;
+              if (rhsCond.IsReference)
+                  rhsCond = llvm.Dereference(rhsCond);
+              LLVMValue tobool2 = llvm.WriteCmpInst_LiteralConst("ne", rhsCond, 0);
+              llvm.WriteBranch(CondEnd);
 
-                //end - phi bool1 and bool2 together
-                llvm.WriteLabel(CondEnd);
-                lastValueLocation = llvm.JoinTemporary(LabelContext, tobool1, CondRhs, tobool2);
+              //end - phi bool1 and bool2 together
+              llvm.WriteLabel(CondEnd);
+              lastValueLocation = llvm.JoinTemporary(LabelContext, tobool1, CondRhs, tobool2);
             }
             #endregion
             // TODO
@@ -471,14 +495,16 @@ public class LLVMVisitor2: Visitor {
         }
     }
 
-  public override void Visit(AST_leaf node, object data) {
-      switch(node.Tag) {
+	public override void Visit(AST_leaf node, object data) {
+	    switch(node.Tag) {
         case NodeType.IntConst:
         case NodeType.CharConst:
             lastValueLocation = llvm.GetIntVal(node);
+            lastValueLocation.LLSemanticType = LLVMValue.ValueSemanticType.LiteralConst;
             break;
         case NodeType.StringConst:
             lastValueLocation = llvm.WriteStringConstant(node);
+            lastValueLocation.LLSemanticType = LLVMValue.ValueSemanticType.LiteralConst;
             break;
         case NodeType.Ident:
             string name = node.Sval;
