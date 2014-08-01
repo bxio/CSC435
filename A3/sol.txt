@@ -1,0 +1,51 @@
+16: Error: member Umm not found in class Foo
+32: Error: a is unknown
+32: Error: b is unknown
+30: Error: Umm: no method in a parent class found to override
+
+Namespace <anonymous>:
+
+Namespace System:
+
+class System.Object : null {
+}
+
+
+class System.String : Object {
+    Length:int
+    class String Substring(int,int)
+}
+
+
+class System.Console : Object {
+    static void WriteLine(class Object)
+    static void Write(class Object)
+    static class String ReadLine()
+}
+
+
+class System.Int32 : Object {
+    static int Parse(class String)
+}
+
+
+class Foo : Object {
+    theAnswer:int
+    hiThere:class String
+    itsAnX:char
+    a:int
+    b:class String
+    c:char
+    static void Main()
+    int Ummm(int,int)
+}
+
+
+class Bar : Foo {
+    x:int
+    int Umm(int,int)
+}
+
+
+4 errors reported, no code generated
+
