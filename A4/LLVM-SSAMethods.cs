@@ -53,7 +53,7 @@ namespace FrontEnd
             IEnumerator<SymTabEntry> list1 = tab1.GetEnumerator();
             IEnumerator<SymTabEntry> list2 = tab2.GetEnumerator();
             SymTab result = new SymTab();
-            GeneratedNames = new List<string>();
+            GeneratedNames = new List<strpair>();
             for ( ; ; )
             {
                 bool b1 = list1.MoveNext();
@@ -83,7 +83,10 @@ namespace FrontEnd
                             newName, GetTypeDescr(e1.Type),
                             e1.SSAName, pred1, e2.SSAName, pred2);
                         ne.SSAName = newName;
-                        GeneratedNames.Add(newName);
+                        strpair newpair = new strpair();
+                        newpair.a = newName;
+                        newpair.b = e1.SSAName;
+                        GeneratedNames.Add(newpair);
                     }
                 }
                 else
