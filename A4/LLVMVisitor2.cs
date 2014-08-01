@@ -207,55 +207,32 @@ public class LLVMVisitor2: Visitor {
             sy = llvm.Join(thenEnd, sySaved, elseEnd, sy);
             break;
         case NodeType.While:
-              string WhileCondLabel = llvm.CreateBBLabel("while.cond");
-              string WhileBodyLabel = llvm.CreateBBLabel("while.body");
-              string WhileEndLabel = llvm.CreateBBLabel("while.end");
-              LoopLabels.Add(WhileEndLabel);
-
-              string labelBeforeWhile = lastBBLabel;
-              SymTab syBeforeCondition = sy.Clone();
-              llvm.WriteBranch(WhileCondLabel);
-              llvm.WriteLabel(WhileCondLabel);
-
-              //first pass : no output
-              llvm.DivertOutput();
-
-              //The while condition
-              lastBBLabel = WhileCondLabel;
-              node[0].Accept(this, data);
-              llvm.WriteCondBranch(lastValueLocation, WhileBodyLabel, WhileEndLabel);
-              SymTab syAfterCondition = sy.Clone();
-              string labelAfterCondition = lastBBLabel;
-
-              //The while body
-              llvm.WriteLabel(WhileBodyLabel);
-              lastBBLabel = WhileBodyLabel;
-              node[1].Accept(this, data);
-              string endBody = lastBBLabel;
-              llvm.WriteBranch(WhileCondLabel);
-
-              //second pass
-              string loopbody = llvm.UndivertOutput();
-              //join : after the loop body and before the condition
-              sy = llvm.Join(labelBeforeWhile, syBeforeCondition, lastBBLabel, sy);
-
-              //replace generated names
-              // Console.WriteLine(llvm.GeneratedNames);
-              foreach (LLVM.strpair pair in llvm.GeneratedNames){
-                  if (pair.b.StartsWith("%")) //don't replace constants!!!
-                  loopbody = loopbody.Replace(pair.b, pair.a);
-              }
-              //write out
-              llvm.WriteRaw(loopbody);
-
-              //The while exit
-              llvm.WriteLabel(WhileEndLabel);
-
-              //join: after cond and before cond
-              sy = llvm.Join(lastBBLabel, sy, labelAfterCondition, syAfterCondition);
-              lastBBLabel = WhileEndLabel;
-              LoopLabels.RemoveAt(LoopLabels.Count - 1);
-
+            string CS = llvm.CreateBBLabel("conditionalstart");
+            string WS = llvm.CreateBBLabel("whilestart");
+            string WE = llvm.CreateBBLabel("whileend");
+            SymTab syWhileCopy = sy.Clone();
+            string[] newLabel = {CS, WS, WE};
+            node[0].Accept(this, newLabel);
+            llvm.DivertOutput();
+            node[1].Accept(this,data);
+            string blockCode = llvm.UndivertOutput();
+            llvm.WriteLabel(CS);
+            lastBBLabel = CS;
+            llvm.Join("conditionalstart", syWhileCopy, "whilestart", sy);
+            llvm.WriteCondBranch(lastValueLocation, WS, WE);
+            llvm.WriteLabel(WS);
+            //write while block
+            foreach (string name in llvm.GeneratedNames){
+              blockCode.Replace(name, llvm.nextTemporary());
+            }
+            llvm.InsertCode(blockCode);
+            //finish while block
+            llvm.WriteBranch(CS);
+            llvm.WriteLabel(WE);
+            /*  TODO
+            node[0].Accept(this,data);
+            node[1].Accept(this,data);
+            */
             lastValueLocation = null;
             break;
         case NodeType.Return:
