@@ -207,56 +207,66 @@ public class LLVMVisitor2: Visitor {
             sy = llvm.Join(thenEnd, sySaved, elseEnd, sy);
             break;
         case NodeType.While:
-              string WhileCondLabel = llvm.CreateBBLabel("while.cond");
-              string WhileBodyLabel = llvm.CreateBBLabel("while.body");
-              string WhileEndLabel = llvm.CreateBBLabel("while.end");
-              LoopLabels.Add(WhileEndLabel);
+          string WhileCondLabel = llvm.CreateBBLabel("while.cond");
+          string WhileBodyLabel = llvm.CreateBBLabel("while.body");
+          string WhileEndLabel = llvm.CreateBBLabel("while.end");
+          LoopLabels.Add(WhileEndLabel);
 
-              string labelBeforeWhile = lastBBLabel;
-              SymTab syBeforeCondition = sy.Clone();
-              llvm.WriteBranch(WhileCondLabel);
-              llvm.WriteLabel(WhileCondLabel);
+          string labelBeforeWhile = lastBBLabel;
+          SymTab syBeforeCondition = sy.Clone();
+          llvm.WriteBranch(WhileCondLabel);
+          llvm.WriteLabel(WhileCondLabel);
 
-              //first pass : no output
-              llvm.DivertOutput();
+          //first pass : no output
+          llvm.DivertOutput();
 
-              //The while condition
-              lastBBLabel = WhileCondLabel;
-              node[0].Accept(this, data);
-              llvm.WriteCondBranch(lastValueLocation, WhileBodyLabel, WhileEndLabel);
-              SymTab syAfterCondition = sy.Clone();
-              string labelAfterCondition = lastBBLabel;
+          //The while condition
+          lastBBLabel = WhileCondLabel;
+          node[0].Accept(this, data);
+          llvm.WriteCondBranch(lastValueLocation, WhileBodyLabel, WhileEndLabel);
+          SymTab syAfterCondition = sy.Clone();
+          string labelAfterCondition = lastBBLabel;
 
-              //The while body
-              llvm.WriteLabel(WhileBodyLabel);
-              lastBBLabel = WhileBodyLabel;
-              node[1].Accept(this, data);
-              string endBody = lastBBLabel;
-              llvm.WriteBranch(WhileCondLabel);
+          //The while body
+          llvm.WriteLabel(WhileBodyLabel);
+          lastBBLabel = WhileBodyLabel;
+          node[1].Accept(this, data);
+          string endBody = lastBBLabel;
+          llvm.WriteBranch(WhileCondLabel);
 
-              //second pass
-              string loopbody = llvm.UndivertOutput();
-              //join : after the loop body and before the condition
-              sy = llvm.Join(labelBeforeWhile, syBeforeCondition, lastBBLabel, sy);
+          //second pass
+          string loopbody = llvm.UndivertOutput();
+          //join : after the loop body and before the condition
+          sy = llvm.Join(labelBeforeWhile, syBeforeCondition, lastBBLabel, sy);
 
-              //replace generated names
-              // Console.WriteLine(llvm.GeneratedNames);
-              foreach (LLVM.strpair pair in llvm.GeneratedNames){
-                  if (pair.b.StartsWith("%")) //don't replace constants!!!
-                  loopbody = loopbody.Replace(pair.b, pair.a);
-              }
-              //write out
-              llvm.WriteRaw(loopbody);
+          //replace generated names
+          // Console.WriteLine(llvm.GeneratedNames);
+          foreach (LLVM.strpair pair in llvm.GeneratedNames){
+              if (pair.b.StartsWith("%")) //don't replace constants!!!
+              loopbody = loopbody.Replace(pair.b, pair.a);
+          }
+          //write out
+          llvm.WriteRaw(loopbody);
 
-              //The while exit
-              llvm.WriteLabel(WhileEndLabel);
+          //The while exit
+          llvm.WriteLabel(WhileEndLabel);
 
-              //join: after cond and before cond
-              sy = llvm.Join(lastBBLabel, sy, labelAfterCondition, syAfterCondition);
-              lastBBLabel = WhileEndLabel;
-              LoopLabels.RemoveAt(LoopLabels.Count - 1);
+          //join: after cond and before cond
+          sy = llvm.Join(lastBBLabel, sy, labelAfterCondition, syAfterCondition);
+          lastBBLabel = WhileEndLabel;
 
-            lastValueLocation = null;
+          LoopLabels.RemoveAt(LoopLabels.Count - 1);
+          lastValueLocation = null;
+          break;
+        case NodeType.Return:
+            if (node[0] == null) {
+                llvm.WriteReturnInst(null);
+            } else {
+                node[0].Accept(this,data);
+                savedValue = llvm.Coerce(lastValueLocation, node[0].Type, currentMethod.ResultType);
+                llvm.WriteReturnInst(savedValue);
+            }
+            lastValueLocation  = null;
             break;
         case NodeType.Return:
             if (node[0] == null) {
@@ -441,35 +451,28 @@ public class LLVMVisitor2: Visitor {
             lastValueLocation = llvm.WriteCompInst(node.Tag, savedValue, lastValueLocation);
             break;
         case NodeType.And:
-        case NodeType.Or:
-            //save lhs start block
-            string LabelContext = lastBBLabel;
-            //left branch
-            node[0].Accept(this, data);
-            LLVMValue lhs = lastValueLocation;
-            if (lhs.IsReference)
-                lhs = llvm.Dereference(lhs);
-            LLVMValue tobool1 = llvm.WriteCmpInst_LiteralConst("ne", lhs, 0);
-            string CondRhs = llvm.CreateBBLabel("CondRhs");
-            string CondEnd =llvm.CreateBBLabel("CondEnd");
-
-            if (node.Tag == NodeType.And){
-              llvm.WriteCondBranch(tobool1, CondRhs, CondEnd);
-            }else{
-              llvm.WriteCondBranch(tobool1, CondEnd, CondRhs);
-            }
-            //right branch
-            llvm.WriteLabel(CondRhs);
-            node[1].Accept(this, data);
-            LLVMValue rhsCond = lastValueLocation;
-            if (rhsCond.IsReference){
-              rhsCond = llvm.Dereference(rhsCond);
-            }
-            LLVMValue tobool2 = llvm.WriteCmpInst_LiteralConst("ne", rhsCond, 0);
-            llvm.WriteBranch(CondEnd);
-            llvm.WriteLabel(CondEnd);
-            lastValueLocation = llvm.JoinTemporary(LabelContext, tobool1, CondRhs, tobool2);
-          break;
+            string[] data_label = (string[])data; //Label information was stored in data at If
+            string f = data_label[1];
+            string t = data_label[0];
+            node[0].Accept(this,data);
+            savedValue = lastValueLocation;
+            node[1].Accept(this,data);
+            string midlab = llvm.CreateBBLabel("midlab");
+            llvm.WriteCondBranch(savedValue, midlab, f);
+            llvm.WriteLabel(midlab);
+            lastBBLabel = midlab;
+            break;
+          case NodeType.Or:
+            string[] data_label2 = (string[])data; //Label information was stored in data at If
+            string f2 = data_label2[1];
+            string t2 = data_label2[0];
+            node[0].Accept(this,data);
+            savedValue = lastValueLocation;
+            node[1].Accept(this,data);
+            string midlab2 = llvm.CreateBBLabel("midlab2");
+            llvm.WriteCondBranch(savedValue, t2, midlab2);
+            llvm.WriteLabel(midlab2);
+            break;
         default:
             throw new Exception("Unexpected tag: "+node.Tag);
         }
