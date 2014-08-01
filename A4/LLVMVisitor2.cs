@@ -236,14 +236,15 @@ public class LLVMVisitor2: Visitor {
 
           //second pass
           string loopbody = llvm.UndivertOutput();
-          //join : after the loop body and before the condition  
+          //join : after the loop body and before the condition
           sy = llvm.Join(labelBeforeWhile, syBeforeCondition, lastBBLabel, sy);
 
           //replace generated names
           // Console.WriteLine(llvm.GeneratedNames);
           foreach (LLVM.strpair pair in llvm.GeneratedNames){
-              if (pair.b.StartsWith("%")) //don't replace constants!!!
+            if (pair.b.StartsWith("%")){
               loopbody = loopbody.Replace(pair.b, pair.a);
+            }
           }
           //write out
           llvm.WriteRaw(loopbody);
