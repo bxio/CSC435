@@ -1,12 +1,12 @@
 ﻿/* LLVM.cs
- * 
+ *
  * Utility code to help with outputting intermediate code in the
  * LLVM text format (as a '.ll' file).
- * 
+ *
  * Author: Nigel Horspool
  * Date: July 2014
  */
- 
+
 using System;
 using System.IO;
 using System.Text;
@@ -24,9 +24,11 @@ namespace FrontEnd
         public bool IsReference { get; set; }
         public string LLType{ get; set; }
         public string LLValue{ get; set; }
-
+        public enum ValueSemanticType { LiteralVar, LLVMTemp, LiteralConst };
+        public ValueSemanticType LLSemanticType;
         public LLVMValue( string t, string v, bool isref ) {
             LLType = t; LLValue = v; IsReference = isref;
+            LLSemanticType = ValueSemanticType.LLVMTemp;
         }
 
         public override string ToString() { return LLType + " " + LLValue; }
@@ -96,9 +98,8 @@ namespace FrontEnd
         }
 
         // For purposes of implementing Moessenboeck's SSA algorithm, we
-        // can divert generated LLVM code into memory (as a big string).
+        // can divert generated LLVM code into a memory (as a big string).
         private Stack<TextWriter> savedStreams = null;
-        private Stack<int> savedIndexNums = null;
 
         public void DivertOutput()
         {
@@ -118,6 +119,7 @@ namespace FrontEnd
             ll = TextWriter.Null;
             savedIndexNums.Push(nextUnnamedIndex);
         }
+
 
 
         // End the diversion to memory and return the diverted LLVM code
@@ -215,6 +217,11 @@ namespace FrontEnd
             if (t is CFArray) return GetTypeDescr((CFArray)t);
             if (t is CbClass) return GetTypeDescr((CbClass)t);
             throw new Exception("invalid call to getTypeDescr");
+        }
+
+        public void WriteRaw(string s)
+        {
+            ll.Write(s);
         }
 
     }

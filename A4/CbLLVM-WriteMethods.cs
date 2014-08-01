@@ -1,14 +1,12 @@
 /* LLVM-WriteMethods.cs
- *
+ * 
  * Utility code to help with outputting intermediate code in the
  * LLVM text format (as a '.ll' file).
- *
- * These are the simpler utility methods
- *
+ * 
  * Author: Nigel Horspool
  * Date: July 2014
  */
-
+ 
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -17,16 +15,18 @@ using System.Diagnostics;
 
 namespace FrontEnd
 {
-
+        
     public partial class LLVM
     {
+    
+        int nextUnnamedIndex = -1;  // used to generate %0, %1, %2 ... sequences
 
         // generate code for the start of method m in class c
         // methodDecl references the AST node with tag MethodDecl where the method is described
         public void WriteMethodStart( CbClass c, CbMethod m, AST methodDecl ) {
             SSANumbering.Clear();
             if (m.Name == "Main" && m.IsStatic)
-                ll.Write("\ndefine {0} @main ", GetTypeDescr(m.ResultType));
+                ll.Write("\ndefine void @main ");
             else
                 ll.Write("\ndefine {0} @{1}.{2} ",
                     GetTypeDescr(m.ResultType), c.Name, m.Name);
@@ -51,16 +51,13 @@ namespace FrontEnd
                 sep = ',';
             }
             if (sep == '(')
-                ll.WriteLine("() {0} {{", macOS? "nounwind uwtable ssp" : "#0" );
+                ll.WriteLine("() #0 {");
             else
-                ll.WriteLine(" ) {0} {{", macOS ? "nounwind uwtable ssp" : "#0");
+                ll.WriteLine(" ) #0 {");
             nextBBNumber = 0;
             nextUnnamedIndex = 0;
         }
 
-        // Generate code for the end of a method, plus definitions for any
-        // anonymous string constants needed which generating code for the
-        // method body
         public void WriteMethodEnd(CbMethod currentMethod) {
             // make sure that all code paths return a result!
             if (currentMethod.ResultType != CbType.Void) {
@@ -92,13 +89,13 @@ namespace FrontEnd
             string instanceType = GetTypeDescr(t);
             ll.WriteLine("  %{0} = getelementptr inbounds {1} null, i32 0, i32 {2}",
                 nextUnnamedIndex, instanceType, t.LastIndex);
-            ll.WriteLine("  %{0} = ptrtoint [0 x i32]* %{1} to i{2}",
-                nextUnnamedIndex+1, nextUnnamedIndex, ptrSize);
-            ll.WriteLine("  %{0} = call i8* @malloc(i{2} %{1})",
-                nextUnnamedIndex+2, nextUnnamedIndex+1, ptrSize);
+            ll.WriteLine("  %{0} = ptrtoint [0 x i32]* %{1} to i32",
+                nextUnnamedIndex+1, nextUnnamedIndex);
+            ll.WriteLine("  %{0} = call i8* @malloc(i32 %{1})",
+                nextUnnamedIndex+2, nextUnnamedIndex+1);
             // clear the allocated storage to 0
-            ll.WriteLine("  call void @llvm.memset.p0i8.i{2}(i8* %{0}, i8 0, i{2} %{1}, i32 0, i1 0)",
-                nextUnnamedIndex+2, nextUnnamedIndex+1, ptrSize);
+            ll.WriteLine("  call void @llvm.memset.p0i8.i32(i8* %{0}, i8 0, i32 %{1}, i32 0, i1 0)",
+                nextUnnamedIndex+2, nextUnnamedIndex+1);
             // convert from i8* to the proper class instance pointer type
             ll.WriteLine("  %{0} = bitcast i8* %{1} to {2}",
                 nextUnnamedIndex+3, nextUnnamedIndex+2, GetTypeDescr(t));
@@ -120,14 +117,14 @@ namespace FrontEnd
             nextUnnamedIndex += 6;
             return new LLVMValue(instanceType,r,false);
         }
-
+        
         // generate code to call a virtual method m in class c
         // thisPtr is a value such as "%3" specifying where the instance pointer is held,
         // and args is an array of LLVM values to use as arguments in the method call;
         // the result is the LLVM value which holds the result returned by m,
         // or null if m is void
         public LLVMValue CallVirtualMethod( CbMethod m, LLVMValue thisPtr, LLVMValue[] args ) {
-            if (args.Length != m.ArgType.Count || thisPtr == null)
+            if (args.Length != m.ArgType.Count)
                 throw new Exception("invalid call to CallVirtualMethod");
             CbClass c = m.Owner;
             LLVMValue result = null;
@@ -168,7 +165,7 @@ namespace FrontEnd
             string rt = GetTypeDescr(m.ResultType);
             LLVMValue result = null;
             if (m.ResultType != CbType.Void) {
-                string rv = nextTemporary();
+                string rv = "%" + nextUnnamedIndex++;
                 ll.Write("{0} = ", rv);
                 result = new LLVMValue(rt,rv,false);
             }
@@ -190,7 +187,7 @@ namespace FrontEnd
             LLVMValue result = null;
             string rt = GetTypeDescr(resultType);
             if (resultType != CbType.Void) {
-                string rv = nextTemporary();
+                string rv = "%" + nextUnnamedIndex++;
                 ll.Write("{0} = ", rv);
                 result = new LLVMValue(rt,rv,false);
             }
@@ -198,7 +195,7 @@ namespace FrontEnd
                 ll.WriteLine("  call {0} {1} ()", rt, name);
             else
                 ll.WriteLine("  call {0} {1} ({2})", rt, name, arg);
-            return result;
+            return result;  
         }
 
         public void AllocLocalVar( string name, CbType type ) {
@@ -207,9 +204,7 @@ namespace FrontEnd
             ll.WriteLine("  %{0}.addr = alloca {1}, align {2}",
                 name, GetTypeDescr(type), align);
         }
-
-        // Returns the name of the LLVM temporary being used for a
-        // local variable -- SSA number ing is used
+        
         public LLVMValue RefLocalVar( string name, CbType type ) {
             int num = 0;
             if (!SSANumbering.TryGetValue(name, out num) || num == 0)
@@ -220,11 +215,19 @@ namespace FrontEnd
             return new LLVMValue(GetTypeDescr(type), "%" + name + "." + num, false);
         }
 
+        // Generates a reference to a field of a class instance
+        public LLVMValue RefClassField( LLVMValue instancePtr, CbField field ) {
+            string rv = "%" + nextUnnamedIndex++;
+            ll.WriteLine("  {0} = getelementptr inbounds {1}, i32 0, i32 {2}",
+                rv, instancePtr, field.Index);
+            return new LLVMValue(GetTypeDescr(field.Type), rv, true);
+        }
+
         // Generates access to a constant -- either the value (for int,char)
         // or a reference for a string value
         public LLVMValue AccessClassConstant( CbConst cnst ) {
             string fullName = String.Format("@{0}.{1}", cnst.Owner.Name, cnst.Name);
-            string rv = nextTemporary();
+            string rv = "%" + nextUnnamedIndex++;
             if (cnst.Type == CbType.Int)
             {
                 ll.WriteLine("  {0} = load i32* {1}", rv, fullName);
@@ -239,17 +242,117 @@ namespace FrontEnd
             return new LLVMValue("i8*", rv, false);
         }
 
+        public void Store( LLVMValue source, LLVMValue dest ) {
+            if (!dest.IsReference)
+                throw new Exception("LLVM.Store needs a memory reference for the dest");
+            source = Dereference(source);
+            string srcType = source.LLType;
+            string destType = dest.LLType;
+            int align;
+            if (destType == "i8") align = 1;
+            else if (destType.EndsWith("*")) align = ptrAlign;
+            else align = 4;
+            ll.WriteLine("  store {0}, {1}* {2}, align {3}",
+                source, dest.LLType, dest.LLValue, align);
+        }
+        
+        public void WriteInst( string inst ) {
+            ll.Write("  ");
+            ll.WriteLine(inst);
+        }
+        
+        public void WriteInst( string inst, params object[] args ) {
+            ll.Write("  ");
+            ll.WriteLine(inst, args);
+        }
+
+        // both operands must have LLVM type i32 (i.e. int type)
+        public LLVMValue WriteIntInst(string opcode, LLVMValue lhs, LLVMValue rhs)
+        {
+            lhs = Dereference(lhs);
+            rhs = Dereference(rhs);
+            string rv = "%" + nextUnnamedIndex++;
+            ll.WriteLine("  {0} = {1} i32 {2}, {3}", rv, opcode, lhs.LLValue, rhs.LLValue);
+            return new LLVMValue("i32", rv, false);
+        }
+
+        public LLVMValue WriteIntInst(NodeType tag, LLVMValue lhs, LLVMValue rhs)
+        {
+            string op = null;
+            switch (tag)
+            {
+                case NodeType.Add: op = "add"; break;
+                case NodeType.Sub: op = "sub"; break;
+                case NodeType.Mul: op = "mul"; break;
+                case NodeType.Div: op = "div"; break;
+                case NodeType.Mod: op = "srem"; break;
+            }
+            return WriteIntInst(op, lhs, rhs);
+        }
+
+
+        // compare two int or char values -- comparing two dfferent kinds of pointer is unsupported
+        public LLVMValue WriteCompInst(string cmp, LLVMValue lhs, LLVMValue rhs)
+        {
+            string rv;
+            lhs = Dereference(lhs);
+            rhs = Dereference(rhs);
+            if (lhs.LLType == "i8" && rhs.LLType == "i32")
+            {
+                lhs = ForceIntValue(lhs);
+            }
+            else if (lhs.LLType == "i32" && rhs.LLType == "i8")
+            {
+                rhs = ForceIntValue(rhs);
+            }
+            // we are comparing two int values here
+            rv = "%" + nextUnnamedIndex++;
+            ll.WriteLine("  {0} = icmp {1} i32 {2}, {3}", rv, cmp, lhs.LLValue, rhs.LLValue);
+            return new LLVMValue("i1", rv, false);
+        }
+
+        public LLVMValue WriteCompInst(NodeType tag, LLVMValue lhs, LLVMValue rhs)
+        {
+            string cmp = null;
+            switch (tag)
+            {
+                case NodeType.Equals: cmp = "eq"; break;
+                case NodeType.NotEquals: cmp = "ne"; break;
+                case NodeType.GreaterOrEqual: cmp = "sge"; break;
+                case NodeType.GreaterThan: cmp = "sgt"; break;
+                case NodeType.LessOrEqual: cmp = "sle"; break;
+                case NodeType.LessThan: cmp = "slt"; break;
+            }
+            Debug.Assert(cmp != null);
+            return WriteCompInst(cmp, lhs, rhs);
+        }
+
+        public LLVMValue ForceIntValue(LLVMValue src)
+        {
+            string rv;
+            src = Dereference(src);
+            if (src.LLType == "i32")
+                return src;
+            if (src.LLType == "i8")
+            {
+                rv = "%" + nextUnnamedIndex++;
+                ll.WriteLine("  {0} = zext i8 {1} to i32", rv, src.LLValue);
+                return new LLVMValue("i32", rv, false);
+            }
+            throw new Exception("unhandled case for LLVM.ForceIntValue");
+        }
+
         // Generates code to coerce int to char, char to int, or
         // any class type to any other class type
         public LLVMValue Coerce( LLVMValue src, CbType srcType, CbType destType ) {
             src = Dereference(src);
             if (srcType == destType)
                 return src;
-            string rv = nextTemporary();
+            string rv = "%" + nextUnnamedIndex++;
             if (destType == CbType.Int) {
                 // widen from char to int
                 ll.WriteLine("  {0} = zext {1} to i32", rv, src);
-                return new LLVMValue("i32", rv, false);
+                return new LLVMValue("i32", rv, false);   
             }
             if (destType == CbType.Char) {
                 // narrow from int to to char
@@ -264,6 +367,12 @@ namespace FrontEnd
             throw new Exception("bad call to llvm.Coerce");
         }
 
-
+        public LLVMValue Dereference(LLVMValue src)
+        {
+            if (!src.IsReference) return src;
+            string rv = "%" + nextUnnamedIndex++;
+            ll.WriteLine("  {0} = load {1}* {2}", rv, src.LLType, src.LLValue);
+            return new LLVMValue(src.LLType, rv, false);
+        }
     }
 }
