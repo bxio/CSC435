@@ -78,7 +78,7 @@ namespace FrontEnd
                     }
                     else
                     {
-                        string newName = "%" + CreateSSAName(e1.Name);
+                        string newName = "%" + CreateSSAName(e1.Name);//nextTemporary();
                         ll.WriteLine("  {0} = phi {1} [{2}, %{3}], [{4}, %{5}]",
                             newName, GetTypeDescr(e1.Type),
                             e1.SSAName, pred1, e2.SSAName, pred2);
@@ -95,12 +95,15 @@ namespace FrontEnd
             return result;
         }
 
-        public LLVMValue JoinTemporary(string pred1, LLVMValue version1, string pred2, LLVMValue version2){
+        public LLVMValue JoinTemporary(string pred1, LLVMValue version1, string pred2, LLVMValue version2)
+        {
             Debug.Assert(version1.LLType == version2.LLType);
             string newIdent = JoinTemporary(pred1, version1.LLValue, pred2, version2.LLValue, version1.LLType);
             return new LLVMValue(version1.LLType, newIdent, false);
         }
-        public string JoinTemporary(string pred1, string identifier1, string pred2, string identifier2, string type){
+
+        public string JoinTemporary(string pred1, string identifier1, string pred2, string identifier2, string type)
+        {
             string rv = nextTemporary();
             ll.WriteLine(" {0} = phi {1} [{2}, {3}], [{4}, {5}]",
                 rv,

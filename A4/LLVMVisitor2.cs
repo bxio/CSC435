@@ -441,28 +441,35 @@ public class LLVMVisitor2: Visitor {
             lastValueLocation = llvm.WriteCompInst(node.Tag, savedValue, lastValueLocation);
             break;
         case NodeType.And:
-            string[] data_label = (string[])data; //Label information was stored in data at If
-            string f = data_label[1];
-            string t = data_label[0];
-            node[0].Accept(this,data);
-            savedValue = lastValueLocation;
-            node[1].Accept(this,data);
-            string midlab = llvm.CreateBBLabel("midlab");
-            llvm.WriteCondBranch(savedValue, midlab, f);
-            llvm.WriteLabel(midlab);
-            lastBBLabel = midlab;
-            break;
-          case NodeType.Or:
-            string[] data_label2 = (string[])data; //Label information was stored in data at If
-            string f2 = data_label2[1];
-            string t2 = data_label2[0];
-            node[0].Accept(this,data);
-            savedValue = lastValueLocation;
-            node[1].Accept(this,data);
-            string midlab2 = llvm.CreateBBLabel("midlab2");
-            llvm.WriteCondBranch(savedValue, t2, midlab2);
-            llvm.WriteLabel(midlab2);
-            break;
+        case NodeType.Or:
+            //save lhs start block
+            string LabelContext = lastBBLabel;
+            //left branch
+            node[0].Accept(this, data);
+            LLVMValue lhs = lastValueLocation;
+            if (lhs.IsReference)
+                lhs = llvm.Dereference(lhs);
+            LLVMValue tobool1 = llvm.WriteCmpInst_LiteralConst("ne", lhs, 0);
+            string CondRhs = llvm.CreateBBLabel("CondRhs");
+            string CondEnd =llvm.CreateBBLabel("CondEnd");
+
+            if (node.Tag == NodeType.And){
+              llvm.WriteCondBranch(tobool1, CondRhs, CondEnd);
+            }else{
+              llvm.WriteCondBranch(tobool1, CondEnd, CondRhs);
+            }
+            //right branch
+            llvm.WriteLabel(CondRhs);
+            node[1].Accept(this, data);
+            LLVMValue rhsCond = lastValueLocation;
+            if (rhsCond.IsReference){
+              rhsCond = llvm.Dereference(rhsCond);
+            }
+            LLVMValue tobool2 = llvm.WriteCmpInst_LiteralConst("ne", rhsCond, 0);
+            llvm.WriteBranch(CondEnd);
+            llvm.WriteLabel(CondEnd);
+            lastValueLocation = llvm.JoinTemporary(LabelContext, tobool1, CondRhs, tobool2);
+          break;
         default:
             throw new Exception("Unexpected tag: "+node.Tag);
         }
