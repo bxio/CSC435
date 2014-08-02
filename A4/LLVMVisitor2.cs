@@ -208,19 +208,19 @@ public class LLVMVisitor2: Visitor {
             break;
         case NodeType.While:
           //create the labels
-          string WS = llvm.CreateBBLabel("while.start");
-          string WB = llvm.CreateBBLabel("while.body");
-          string WE = llvm.CreateBBLabel("while.end");
-          string WBS = llvm.CreateBBLabel("while.blockstart");
-          string[] labels2 = {WS, WB, WE};
+          string WhileStartLab = llvm.CreateBBLabel("while.start");
+          string WhileBodyLab = llvm.CreateBBLabel("while.body");
+          string WhileEndLab = llvm.CreateBBLabel("while.end");
+          string WhileBlockStartLab = llvm.CreateBBLabel("while.blockstart");
+          string[] labels2 = {WhileStartLab, WhileBodyLab, WhileEndLab};
           //define
-          llvm.WriteBranch(WBS);
-          llvm.WriteLabel(WBS);
-          llvm.WriteBranch(WS);
-          llvm.WriteLabel(WS);
+          llvm.WriteBranch(WhileBlockStartLab);
+          llvm.WriteLabel(WhileBlockStartLab);
+          llvm.WriteBranch(WhileStartLab);
+          llvm.WriteLabel(WhileStartLab);
           //store TrueDest and FalseDest
-          string TrueDest = WB;
-          string FalseDest = WE;
+          string TrueDest = WhileBodyLab;
+          string FalseDest = WhileEndLab;
           string[] destinations = {TrueDest, FalseDest};
 
           SymTab SyAtTop = sy.Clone();
@@ -229,29 +229,29 @@ public class LLVMVisitor2: Visitor {
 
           //visit the test condition
           node[0].Accept(this, destinations);
-          llvm.WriteCondBranch(lastValueLocation, WB, WE);
-          llvm.WriteLabel(WB);
+          llvm.WriteCondBranch(lastValueLocation, WhileBodyLab, WhileEndLab);
+          llvm.WriteLabel(WhileBodyLab);
           //visit loop body
           node[1].Accept(this, data);
-          llvm.WriteBranch(WS);
+          llvm.WriteBranch(WhileStartLab);
 
           //stop discarding output
           llvm.ResumeOutput();
 
           //Clone the symbol table
           SymTab SyBeforePhi = sy.Clone();
-          sy = llvm.Join(WBS, SyAtTop, WB, sy);
+          sy = llvm.Join(WhileBlockStartLab, SyAtTop, WhileBodyLab, sy);
           SymTab SyAfterPhi = sy.Clone();
           llvm.DivertOutput();
 
           //visit the children
           node[0].Accept(this, destinations);
-          llvm.WriteCondBranch(lastValueLocation, WB, WE);
-          llvm.WriteLabel(WB);
+          llvm.WriteCondBranch(lastValueLocation, WhileBodyLab, WhileEndLab);
+          llvm.WriteLabel(WhileBodyLab);
 
           node[1].Accept(this, data);
-          llvm.WriteBranch(WS);
-          llvm.WriteLabel(WE);
+          llvm.WriteBranch(WhileStartLab);
+          llvm.WriteLabel(WhileEndLab);
 
           //Wrapup
           string codeTaken = llvm.UndivertOutput();
@@ -367,7 +367,6 @@ public class LLVMVisitor2: Visitor {
             break;
         case NodeType.NewArray:
             node[1].Accept(this,data);
-            // TODO -- done!
             lastValueLocation = llvm.WriteNewArray(node[0].Type, lastValueLocation);
             break;
         case NodeType.NewClass:
@@ -375,13 +374,15 @@ public class LLVMVisitor2: Visitor {
             break;
         case NodeType.PlusPlus:
           node[0].Accept(this, data);
-            string Inst = "add";
-            if (lastValueLocation.IsReference){
+            string Inst = "add"; // for adding 1
+            // dereference variable if it is a pointer and do STR op
+			if (lastValueLocation.IsReference){
                 LLVMValue operand = llvm.Dereference(lastValueLocation);
                 LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, operand, 1);
                 llvm.Store(result, lastValueLocation);
+			// get local var, write add instruction
             }else{
-                //Note that ++ and -- updates SSA if it's on a local variable
+                // This updates the SSA if var = local
                 SymTabEntry dest = lastLocalVariable;
                 LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, lastValueLocation, 1);
                 dest.SSAName = result.LLValue;
@@ -390,13 +391,15 @@ public class LLVMVisitor2: Visitor {
           break;
         case NodeType.MinusMinus:
             node[0].Accept(this, data);
-              Inst = "sub";
+              Inst = "sub"; // for subtracting 1
+			  // dereference variable if it is a pointer
               if (lastValueLocation.IsReference){
                   LLVMValue operand = llvm.Dereference(lastValueLocation);
                   LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, operand, 1);
                   llvm.Store(result, lastValueLocation);
+			  // get local var, write add instruction
               }else{
-                  //Note that ++ and -- updates SSA if it's on a local variable
+                  // This updates the SSA if var = local
                   SymTabEntry dest = lastLocalVariable;
                   LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, lastValueLocation, 1);
                   dest.SSAName = result.LLValue;
@@ -408,12 +411,12 @@ public class LLVMVisitor2: Visitor {
             break;
         case NodeType.UnaryMinus:
             node[0].Accept(this, data);
-              LLVMValue tmp = lastValueLocation;
-              if (tmp.IsReference){
-                  //Load the value from memory
-                  tmp = llvm.Dereference(lastValueLocation);
+              LLVMValue TargetVar = lastValueLocation;
+			  // If var123 is a pointer, dereference it
+              if (TargetVar.IsReference){
+                  TargetVar = llvm.Dereference(lastValueLocation);
               }
-              lastValueLocation = llvm.WriteIntInst_LiteralConst("sub", 0, tmp);
+              lastValueLocation = llvm.WriteIntInst_LiteralConst("sub", 0, TargetVar);
             break;
         case NodeType.Index:
             node[0].Accept(this,data);
@@ -448,24 +451,28 @@ public class LLVMVisitor2: Visitor {
             lastValueLocation = llvm.WriteCompInst(node.Tag, savedValue, lastValueLocation);
             break;
         case NodeType.And:
+			// cast the true dest and false dest
             string[] data_label = (string[])data;
             string checkMe = data_label[1];
             string data0 = data_label[0];
             node[0].Accept(this,data);
             savedValue = lastValueLocation;
             node[1].Accept(this,data);
+			// generate conditional branching
             string midlab = llvm.CreateBBLabel("midlab");
             llvm.WriteCondBranch(savedValue, midlab, checkMe);
             llvm.WriteLabel(midlab);
             lastBBLabel = midlab;
             break;
           case NodeType.Or:
+		    // cast the true dest and false dest
             string[] data_label2 = (string[])data;
             string data1 = data_label2[1];
             string checkMe2 = data_label2[0];
             node[0].Accept(this,data);
             savedValue = lastValueLocation;
             node[1].Accept(this,data);
+			// generate conditional branching
             string midlab2 = llvm.CreateBBLabel("midlab2");
             llvm.WriteCondBranch(savedValue, checkMe2, midlab2);
             llvm.WriteLabel(midlab2);
