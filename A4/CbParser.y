@@ -282,7 +282,12 @@ Qualifiers:     '.' Identifier Qualifiers
 Identifier:     Ident   { $$ = AST.Leaf(NodeType.Ident, LineNumber, lexer.yytext); }
         ;
 
-AnInteger:      IntConst  { $$ = AST.Leaf(NodeType.IntConst, LineNumber, int.Parse(lexer.yytext)); }
+AnInteger:      IntConst
+				{ int val = 0;
+				  if (!int.TryParse(lexer.yytext, out val))
+				      throw new Exception("Bad integer constant: "+lexer.yytext);
+				  $$ = AST.Leaf(NodeType.IntConst, LineNumber, val);
+				}
         ;
 
 AChar:          CharConst   { $$ = AST.Leaf(NodeType.CharConst, LineNumber, lexer.yytext); }
