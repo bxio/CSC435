@@ -111,13 +111,13 @@ namespace FrontEnd
 
         public void DiscardOutput()
         {
-            if (savedStreams == null)
-                savedStreams = new Stack<TextWriter>();
-            if (savedIndexNums == null)
-                savedIndexNums = new Stack<int>();
-            savedStreams.Push(ll);
-            ll = TextWriter.Null;
-            savedIndexNums.Push(nextUnnamedIndex);
+            // if (savedStreams == null)
+            //     savedStreams = new Stack<TextWriter>();
+            // if (savedIndexNums == null)
+            //     savedIndexNums = new Stack<int>();
+            // savedStreams.Push(ll);
+            // ll = TextWriter.Null;
+            // savedIndexNums.Push(nextUnnamedIndex);
         }
 
 
@@ -142,7 +142,7 @@ namespace FrontEnd
             ll.Close();
             ll.Dispose();
             ll = savedStreams.Pop();
-            nextUnnamedIndex = savedIndexNums.Pop();
+            //nextUnnamedIndex = savedIndexNums.Pop();
         }
 
         // Diverted LLVM code can be reinserted using this method

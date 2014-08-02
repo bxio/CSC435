@@ -123,7 +123,7 @@ namespace FrontEnd
               } else
                   throw new Exception("Inconsistent symbol tables");
           }
-          llvm.InsertCode(code);
+          // llvm.InsertCode(code);
         }
 
         public LLVMValue JoinTemporary(string pred1, LLVMValue version1, string pred2, LLVMValue version2)
