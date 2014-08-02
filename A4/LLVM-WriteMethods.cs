@@ -26,7 +26,7 @@ namespace FrontEnd
         public void WriteMethodStart( CbClass c, CbMethod m, AST methodDecl ) {
             SSANumbering.Clear();
             if (m.Name == "Main" && m.IsStatic)
-                ll.Write("\ndefine {0} @main ", GetTypeDescr(m.ResultType));
+                ll.Write("\ndefine void @main ");
             else
                 ll.Write("\ndefine {0} @{1}.{2} ",
                     GetTypeDescr(m.ResultType), c.Name, m.Name);

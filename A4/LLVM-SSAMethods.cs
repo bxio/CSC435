@@ -71,7 +71,7 @@ namespace FrontEnd
                     SymTabEntry e1 = list1.Current;
                     SymTabEntry e2 = list2.Current;
                     if (e1 == null && e2 == null)
-                    {
+                    {// we hit a scope marker
                         result.Enter();
                         continue;
                     }
@@ -99,6 +99,31 @@ namespace FrontEnd
                     throw new Exception("Attempt to join inconsistent symbol tables");
             }
             return result;
+        }
+
+
+        public void InsertLoopCode(string code, SymTab syAtTop, SymTab syAtBot ) {
+          // This is inefficient because we are making multiple passes over the code,
+          // effectively once for each phi function at the top of the while loop
+          IEnumerator<SymTabEntry> list1 = syAtTop.GetEnumerator();
+          IEnumerator<SymTabEntry> list2 = syAtBot.GetEnumerator();
+          for ( ; ; )
+          {
+              bool b1 = list1.MoveNext();
+              bool b2 = list2.MoveNext();
+              if (!b1 && !b2)
+                  break;
+              if (b1 && b2)
+              {
+                  SymTabEntry e1 = list1.Current;
+                  SymTabEntry e2 = list2.Current;
+                  if (e1 == e2 || e1.SSAName == e2.SSAName)
+                      continue;
+                  code = code.Replace(e1.SSAName,e2.SSAName);
+              } else
+                  throw new Exception("Inconsistent symbol tables");
+          }
+          llvm.InsertCode(code);
         }
 
         public LLVMValue JoinTemporary(string pred1, LLVMValue version1, string pred2, LLVMValue version2)
