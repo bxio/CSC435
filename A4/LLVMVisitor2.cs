@@ -207,56 +207,49 @@ public class LLVMVisitor2: Visitor {
             sy = llvm.Join(thenEnd, sySaved, elseEnd, sy);
             break;
         case NodeType.While:
-          string WhileCondLabel = llvm.CreateBBLabel("while.cond");
-          string WhileBodyLabel = llvm.CreateBBLabel("while.body");
-          string WhileEndLabel = llvm.CreateBBLabel("while.end");
-          LoopLabels.Add(WhileEndLabel);
+          string WS = llvm.CreateBBLabel("while.start");
+          string WB = llvm.CreateBBLabel("while.body");
+          string WE = llvm.CreateBBLabel("while.end");
+          string WBS = llvm.CreateBBLabel("while.blockstart");
+          string[] labels2 = {WS, WB, WE};
+          llvm.WriteBranch(WBS);
+          llvm.WriteLabel(WBS);
+          llvm.WriteBranch(WS);
+          llvm.WriteLabel(WS);
 
-          string labelBeforeWhile = lastBBLabel;
-          SymTab syBeforeCondition = sy.Clone();
-          llvm.WriteBranch(WhileCondLabel);
-          llvm.WriteLabel(WhileCondLabel);
+          string TrueDest = WB;
+          string FalseDest = WE;
+          string[] destinations = {TrueDest, FalseDest};
 
-          //first pass : no output
+          SymTab SyAtTop = sy.Clone();
+          llvm.DiscardOutput();
+          node[0].Accept(this, destinations);
+          llvm.WriteCondBranch(lastValueLocation, WB, WE);
+          llvm.WriteLabel(WB);
+
+          node[1].Accept(this, data);
+          llvm.WriteBranch(WS);
+          llvm.ResumeOutput();
+
+          SymTab SyBeforePhi = sy.Clone();
+          sy = llvm.Join(WBS, SyAtTop, WB, sy);
+          SymTab SyAfterPhi = sy.Clone();
           llvm.DivertOutput();
 
-          //The while condition
-          lastBBLabel = WhileCondLabel;
-          node[0].Accept(this, data);
-          llvm.WriteCondBranch(lastValueLocation, WhileBodyLabel, WhileEndLabel);
-          SymTab syAfterCondition = sy.Clone();
-          string labelAfterCondition = lastBBLabel;
+          node[0].Accept(this, destinations);
+          llvm.WriteCondBranch(lastValueLocation, WB, WE);
+          llvm.WriteLabel(WB);
 
-          //The while body
-          llvm.WriteLabel(WhileBodyLabel);
-          lastBBLabel = WhileBodyLabel;
           node[1].Accept(this, data);
-          string endBody = lastBBLabel;
-          llvm.WriteBranch(WhileCondLabel);
+          llvm.WriteBranch(WS);
+          llvm.WriteLabel(WE);
 
-          //second pass
-          string loopbody = llvm.UndivertOutput();
-          //join : after the loop body and before the condition
-          sy = llvm.Join(labelBeforeWhile, syBeforeCondition, lastBBLabel, sy);
+          string takenCode = llvm.UndivertOutput();
+          string modifiedCode = llvm.InsertLoopCode(takenCode, SyBeforePhi, sy);
 
-          //replace generated names
-          // Console.WriteLine(llvm.GeneratedNames);
-          foreach (LLVM.strpair pair in llvm.GeneratedNames){
-            if (pair.b.StartsWith("%")){
-              loopbody = loopbody.Replace(pair.b, pair.a);
-            }
-          }
-          //write out
-          llvm.WriteRaw(loopbody);
+          llvm.InsertCode(modifiedCode);
+          sy = SyAfterPhi;
 
-          //The while exit
-          llvm.WriteLabel(WhileEndLabel);
-
-          //join: after cond and before cond
-          sy = llvm.Join(lastBBLabel, sy, labelAfterCondition, syAfterCondition);
-          lastBBLabel = WhileEndLabel;
-
-          LoopLabels.RemoveAt(LoopLabels.Count - 1);
           lastValueLocation = null;
           break;
         case NodeType.Return:
