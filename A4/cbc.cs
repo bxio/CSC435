@@ -75,7 +75,8 @@ public class Start {
             "    -ast      print the AST after construction",
             "    -tc       print the AST after type checking",
             "    -ns       recursively print the contents of the top-level namespace",
-            "    -tokens   print the token sequence after scanning"
+            "    -tokens   print the token sequence after scanning",
+            "    -nocode   do not generate LLVM code"
         };
         foreach(string s in usage) {
             Console.WriteLine("{0}", s);
@@ -89,6 +90,7 @@ public class Start {
         bool printASTtc = false;
         bool printTokens = false;
         bool printNS = false;
+        bool noCode = false;
         string target = "x86_64-unknown-linux-gnu";  // default for CSC linux server
 
         foreach( string arg in args ) {
@@ -102,6 +104,8 @@ public class Start {
                     printTokens = true;  break;
                 case "-tc":
                     printASTtc = true;  break;
+                case "-nocode":
+                    noCode = true;  break;
                 default:
                     if (arg.StartsWith("-target="))
                     {
@@ -159,6 +163,12 @@ public class Start {
 
         if (SemanticErrorCnt > 0) {
             Console.WriteLine("\n{0} errors reported, no code generated\n", SemanticErrorCnt);
+            return;
+        }
+
+        if (noCode)
+        {
+            Console.WriteLine("\nLLVM output suppressed, compilation ended");
             return;
         }
 
