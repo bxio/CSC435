@@ -207,35 +207,43 @@ public class LLVMVisitor2: Visitor {
             sy = llvm.Join(thenEnd, sySaved, elseEnd, sy);
             break;
         case NodeType.While:
+          //create the labels
           string WS = llvm.CreateBBLabel("while.start");
           string WB = llvm.CreateBBLabel("while.body");
           string WE = llvm.CreateBBLabel("while.end");
           string WBS = llvm.CreateBBLabel("while.blockstart");
           string[] labels2 = {WS, WB, WE};
+          //define
           llvm.WriteBranch(WBS);
           llvm.WriteLabel(WBS);
           llvm.WriteBranch(WS);
           llvm.WriteLabel(WS);
-
+          //store TrueDest and FalseDest
           string TrueDest = WB;
           string FalseDest = WE;
           string[] destinations = {TrueDest, FalseDest};
 
           SymTab SyAtTop = sy.Clone();
+          //throw away the output
           llvm.DiscardOutput();
+
+          //visit the test condition
           node[0].Accept(this, destinations);
           llvm.WriteCondBranch(lastValueLocation, WB, WE);
           llvm.WriteLabel(WB);
-
+          //visit loop body
           node[1].Accept(this, data);
           llvm.WriteBranch(WS);
+
+          //stop discarding output
           llvm.ResumeOutput();
 
+          //Clone the symbol table
           SymTab SyBeforePhi = sy.Clone();
           sy = llvm.Join(WBS, SyAtTop, WB, sy);
           SymTab SyAfterPhi = sy.Clone();
           llvm.DivertOutput();
-
+          //visit the children
           node[0].Accept(this, destinations);
           llvm.WriteCondBranch(lastValueLocation, WB, WE);
           llvm.WriteLabel(WB);
@@ -248,10 +256,13 @@ public class LLVMVisitor2: Visitor {
           string modifiedCode = llvm.InsertLoopCode(takenCode, SyBeforePhi, sy);
 
           llvm.InsertCode(modifiedCode);
+
+          //set the symbol table right
           sy = SyAfterPhi;
 
           lastValueLocation = null;
           break;
+
         case NodeType.Return:
             if (node[0] == null) {
                 llvm.WriteReturnInst(null);
@@ -435,26 +446,26 @@ public class LLVMVisitor2: Visitor {
             lastValueLocation = llvm.WriteCompInst(node.Tag, savedValue, lastValueLocation);
             break;
         case NodeType.And:
-            string[] data_label = (string[])data; //Label information was stored in data at If
-            string f = data_label[1];
-            string t = data_label[0];
+            string[] data_label = (string[])data;
+            string checkMe = data_label[1];
+            string data0 = data_label[0];
             node[0].Accept(this,data);
             savedValue = lastValueLocation;
             node[1].Accept(this,data);
             string midlab = llvm.CreateBBLabel("midlab");
-            llvm.WriteCondBranch(savedValue, midlab, f);
+            llvm.WriteCondBranch(savedValue, midlab, checkMe);
             llvm.WriteLabel(midlab);
             lastBBLabel = midlab;
             break;
           case NodeType.Or:
-            string[] data_label2 = (string[])data; //Label information was stored in data at If
-            string f2 = data_label2[1];
-            string t2 = data_label2[0];
+            string[] data_label2 = (string[])data;
+            string data1 = data_label2[1];
+            string checkMe2 = data_label2[0];
             node[0].Accept(this,data);
             savedValue = lastValueLocation;
             node[1].Accept(this,data);
             string midlab2 = llvm.CreateBBLabel("midlab2");
-            llvm.WriteCondBranch(savedValue, t2, midlab2);
+            llvm.WriteCondBranch(savedValue, checkMe2, midlab2);
             llvm.WriteLabel(midlab2);
             break;
         default:
