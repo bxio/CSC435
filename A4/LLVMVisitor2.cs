@@ -153,11 +153,11 @@ public class LLVMVisitor2: Visitor {
         case NodeType.LocalDecl:
             AST_kary locals = node[1] as AST_kary;
             for(int i=0; i<locals.NumChildren; i++) {
-                AST_leaf local = locals[i] as AST_leaf;
-                SymTabEntry en = sy.Binding(local.Sval, local.LineNumber);
-                en.Type = node[0].Type;
-
-                en.SSAName = llvm.CreateSSAName(en.Name);
+              AST_leaf local = locals[i] as AST_leaf;
+              SymTabEntry en = sy.Binding(local.Sval, local.LineNumber);
+              en.Type = node[0].Type;
+              en.SSAName = "%" + local.Sval;
+              en.SSAName = llvm.CreateSSAName(en.Name);
             }
             break;
         case NodeType.Assign:
