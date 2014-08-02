@@ -243,6 +243,7 @@ public class LLVMVisitor2: Visitor {
           sy = llvm.Join(WBS, SyAtTop, WB, sy);
           SymTab SyAfterPhi = sy.Clone();
           llvm.DivertOutput();
+
           //visit the children
           node[0].Accept(this, destinations);
           llvm.WriteCondBranch(lastValueLocation, WB, WE);
@@ -252,10 +253,11 @@ public class LLVMVisitor2: Visitor {
           llvm.WriteBranch(WS);
           llvm.WriteLabel(WE);
 
-          string takenCode = llvm.UndivertOutput();
-          string modifiedCode = llvm.InsertLoopCode(takenCode, SyBeforePhi, sy);
+          //Wrapup
+          string codeTaken = llvm.UndivertOutput();
+          string codeModeified = llvm.InsertLoopCode(codeTaken, SyBeforePhi, sy);
 
-          llvm.InsertCode(modifiedCode);
+          llvm.InsertCode(codeModeified);
 
           //set the symbol table right
           sy = SyAfterPhi;
