@@ -67,7 +67,7 @@ public class LLVMVisitor2: Visitor {
         lastBBLabel = null;
     }
 
-	public override void Visit(AST_kary node, object data) {
+  public override void Visit(AST_kary node, object data) {
         switch(node.Tag) {
         case NodeType.ClassList:
             // visit each class declared in the program
@@ -99,8 +99,8 @@ public class LLVMVisitor2: Visitor {
         }
     }
 
-	public override void Visit( AST_nonleaf node, object data ) {
-	    LLVMValue savedValue;
+  public override void Visit( AST_nonleaf node, object data ) {
+      LLVMValue savedValue;
         switch(node.Tag) {
         case NodeType.Program:
             llvm.OutputArrayDefinitions();  // NEW!
@@ -316,12 +316,12 @@ public class LLVMVisitor2: Visitor {
                 if (m.Method.IsStatic)
                     lastValueLocation = llvm.CallStaticMethod(m.Method, actuals);
                 else {
-                	if (savedValue == null) {
-                	    if (currentMethod.IsStatic)
-                	        Start.SemanticError(node.LineNumber,
-                	            "Cannot call virtual method without an object reference");
-                		savedValue = thisPointer;
-                	}
+                  if (savedValue == null) {
+                      if (currentMethod.IsStatic)
+                          Start.SemanticError(node.LineNumber,
+                              "Cannot call virtual method without an object reference");
+                    savedValue = thisPointer;
+                  }
                     lastValueLocation = llvm.CallVirtualMethod(m.Method, savedValue, actuals);
                 }
             }
@@ -376,11 +376,11 @@ public class LLVMVisitor2: Visitor {
           node[0].Accept(this, data);
             string Inst = "add"; // for adding 1
             // dereference variable if it is a pointer and do STR op
-			if (lastValueLocation.IsReference){
+      if (lastValueLocation.IsReference){
                 LLVMValue operand = llvm.Dereference(lastValueLocation);
                 LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, operand, 1);
                 llvm.Store(result, lastValueLocation);
-			// get local var, write add instruction
+      // get local var, write add instruction
             }else{
                 // This updates the SSA if var = local
                 SymTabEntry dest = lastLocalVariable;
@@ -392,12 +392,12 @@ public class LLVMVisitor2: Visitor {
         case NodeType.MinusMinus:
             node[0].Accept(this, data);
               Inst = "sub"; // for subtracting 1
-			  // dereference variable if it is a pointer
+        // dereference variable if it is a pointer
               if (lastValueLocation.IsReference){
                   LLVMValue operand = llvm.Dereference(lastValueLocation);
                   LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, operand, 1);
                   llvm.Store(result, lastValueLocation);
-			  // get local var, write add instruction
+        // get local var, write add instruction
               }else{
                   // This updates the SSA if var = local
                   SymTabEntry dest = lastLocalVariable;
@@ -412,7 +412,7 @@ public class LLVMVisitor2: Visitor {
         case NodeType.UnaryMinus:
             node[0].Accept(this, data);
               LLVMValue TargetVar = lastValueLocation;
-			  // If var123 is a pointer, dereference it
+        // If var123 is a pointer, dereference it
               if (TargetVar.IsReference){
                   TargetVar = llvm.Dereference(lastValueLocation);
               }
@@ -425,7 +425,7 @@ public class LLVMVisitor2: Visitor {
             lastValueLocation = llvm.ForceIntValue(lastValueLocation);
             // TODO  -- done!
             lastValueLocation = llvm.ElementReference(node.Type,
-				savedValue, lastValueLocation);
+        savedValue, lastValueLocation);
             break;
         case NodeType.Add:
         case NodeType.Sub:
@@ -451,28 +451,28 @@ public class LLVMVisitor2: Visitor {
             lastValueLocation = llvm.WriteCompInst(node.Tag, savedValue, lastValueLocation);
             break;
         case NodeType.And:
-			// cast the true dest and false dest
-            string[] data_label = (string[])data;
-            string checkMe = data_label[1];
-            string data0 = data_label[0];
+            // cast the true dest and false dest
+            string[] dataCopy = (string[])data;
+            string checkMe = dataCopy[1];
+            string data0 = dataCopy[0];
             node[0].Accept(this,data);
             savedValue = lastValueLocation;
             node[1].Accept(this,data);
-			// generate conditional branching
+            // generate conditional branching
             string midlab = llvm.CreateBBLabel("midlab");
             llvm.WriteCondBranch(savedValue, midlab, checkMe);
             llvm.WriteLabel(midlab);
             lastBBLabel = midlab;
             break;
           case NodeType.Or:
-		    // cast the true dest and false dest
-            string[] data_label2 = (string[])data;
-            string data1 = data_label2[1];
-            string checkMe2 = data_label2[0];
+            // cast the true dest and false dest
+            string[] dataCopy2 = (string[])data;
+            string data1 = dataCopy2[1];
+            string checkMe2 = dataCopy2[0];
             node[0].Accept(this,data);
             savedValue = lastValueLocation;
             node[1].Accept(this,data);
-			// generate conditional branching
+            // generate conditional branching
             string midlab2 = llvm.CreateBBLabel("midlab2");
             llvm.WriteCondBranch(savedValue, checkMe2, midlab2);
             llvm.WriteLabel(midlab2);
@@ -482,8 +482,8 @@ public class LLVMVisitor2: Visitor {
         }
     }
 
-	public override void Visit(AST_leaf node, object data) {
-	    switch(node.Tag) {
+  public override void Visit(AST_leaf node, object data) {
+      switch(node.Tag) {
         case NodeType.IntConst:
         case NodeType.CharConst:
             lastValueLocation = llvm.GetIntVal(node);
