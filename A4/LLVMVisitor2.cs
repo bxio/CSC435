@@ -467,11 +467,9 @@ public class LLVMVisitor2: Visitor {
         case NodeType.IntConst:
         case NodeType.CharConst:
             lastValueLocation = llvm.GetIntVal(node);
-            lastValueLocation.LLSemanticType = LLVMValue.ValueSemanticType.LiteralConst;
             break;
         case NodeType.StringConst:
             lastValueLocation = llvm.WriteStringConstant(node);
-            lastValueLocation.LLSemanticType = LLVMValue.ValueSemanticType.LiteralConst;
             break;
         case NodeType.Ident:
             string name = node.Sval;
